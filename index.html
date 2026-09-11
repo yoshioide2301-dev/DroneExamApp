@@ -567,6 +567,13 @@
     .phone-frame::before, .phone-frame::after{ display:none; }
     .phone-notch{ display:none; }
     .phone-screen{ border-radius:0; height:100%; }
+    .status-bar{ display:none; }
+  }
+
+  /* real iOS status bar already exists when launched as an installed PWA;
+     hide the mocked-up preview status bar so it doesn't double up */
+  @media (display-mode:standalone){
+    .status-bar{ display:none; }
   }
 </style>
 </head>
