@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**DroneQuizApp**(ドローン国家資格 学科対策アプリ)は、無人航空機操縦士(一等・二等)国家資格の学科試験対策を行う単一HTMLファイルのWebアプリです。国土交通省「無人航空機の飛行の安全に関する教則(第5版)」に準拠した全128問を収録しています。
+**DroneQuizApp**(ドローン国家資格 学科対策アプリ)は、無人航空機操縦士(一等・二等)国家資格の学科試験対策を行う単一HTMLファイルのWebアプリです。国土交通省「無人航空機の飛行の安全に関する教則(第5版)」に準拠した全164問を収録しています。
 
 本番公開URL: **https://yoshioide2301-dev.github.io/DroneExamApp/**
 (GitHub Pages / リポジトリ `DroneExamApp` は Public)
@@ -54,7 +54,7 @@ TestApp/
 ```
 
 - **`CHAPTERS`**: 教則の章構成(全5章)。`id` / `title` / `subtitle` / `icon` / `pageRange` を持つ配列。
-- **`QUESTIONS`**: 全128問の設問データ配列。各要素は以下の形式:
+- **`QUESTIONS`**: 全164問の設問データ配列。各要素は以下の形式:
   ```js
   { id:"ch1-01", licenses:["first","second"], chapterID:1, category:"操縦者の心得",
     question:"...", choices:[...], correct:1, explanation:"...", ref:"第1章 1節（P.7）" }
