@@ -797,6 +797,28 @@
   .cbt-badge.pass{ background:var(--success-soft); color:var(--success); border:1px solid var(--success); }
   .cbt-badge.fail{ background:var(--failure-soft); color:var(--failure); border:1px solid var(--failure); }
 
+  /* ---------- chapter sub-tabs / wrong-only mode ---------- */
+  .chapter-seg{ margin:0 20px 10px; }
+  .chapter-seg button{ font-size:11.5px; padding:9px 4px; }
+  .wrong-badge{
+    font-size:11px; font-weight:800; color:#ffb020;
+    background:rgba(230,83,77,0.18); border:1px solid rgba(230,83,77,0.45);
+    padding:3px 9px; border-radius:99px; white-space:nowrap;
+  }
+  .wrong-badge.none{ color:var(--text-tertiary); background:rgba(255,255,255,0.06); border-color:transparent; }
+  .chapter-card.cleared{ border-color:#eab308; box-shadow:0 0 0 1px rgba(234,179,8,0.35), 0 6px 18px rgba(234,179,8,0.12); }
+  .clear-badge{
+    font-size:11px; font-weight:800; color:#1a1400;
+    background:linear-gradient(135deg, #facc15 0%, #eab308 100%);
+    padding:3px 9px; border-radius:99px; white-space:nowrap;
+  }
+  .remain-badge{
+    margin-left:auto; font-size:12px; font-weight:800; color:#ffb020;
+    background:rgba(230,83,77,0.18); border:1px solid rgba(230,83,77,0.45);
+    padding:4px 11px; border-radius:99px; white-space:nowrap; display:none;
+  }
+  .remain-badge.done{ color:#1a1400; background:linear-gradient(135deg,#facc15,#eab308); border-color:#eab308; }
+
   /* ================= responsive: real mobile browsers ================= */
   @media (max-width:480px){
     body{ background:var(--navy-deep); }
@@ -884,6 +906,10 @@
           </div>
 
           <div class="section-title">章から選ぶ</div>
+          <div class="seg chapter-seg" id="chapterViewSeg">
+            <button type="button" class="active" data-v="all" onclick="setChapterView('all')">章から選ぶ（全問）</button>
+            <button type="button" data-v="wrong" onclick="setChapterView('wrong')">章から選ぶ（間違えた問題のみ）</button>
+          </div>
           <div class="chapter-list" id="chapterList"></div>
           </div>
 
@@ -914,6 +940,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
             </button>
             <div class="title" id="quizChapterTitle">第1章</div>
+            <span class="remain-badge" id="quizRemainBadge"></span>
           </div>
 
           <div class="quiz-progress-wrap">
@@ -2160,8 +2187,71 @@ function recordAnswer(questionId, isCorrect){
     saveWrongIds(license, ids);
   }
   recordProgress(license, questionId, isCorrect);
+  const q = QUESTIONS.find(x => x.id === questionId);
+  if(q){
+    if(!isCorrect) setChapterCleared(license, q.chapterID, false);
+    else if(idx !== -1 && wrongQuestionsFor(q.chapterID, license).length === 0) setChapterCleared(license, q.chapterID, true);
+  }
   renderWeakPointCard();
   renderProgressGauge();
+}
+
+/* =========================================================
+   章別「誤答消去型」学習モード
+   誤答リスト(droneQuizWrongQuestionIds_<license>)を章で絞り込み、正解した瞬間に消去する。
+   達成フラグ: droneChapterCleared_<license> = { "<chapterID>": true }
+   （その章の誤答を消し込んで0件になった時にON、その章で再び誤答したらOFF）
+   ========================================================= */
+function wrongQuestionsFor(chapterId, license){
+  return loadWrongIds(license)
+    .map(id => QUESTIONS.find(q => q.id === id))
+    .filter(q => q && q.chapterID === chapterId && q.licenses.includes(license));
+}
+
+function loadChapterCleared(license){
+  try{
+    const obj = JSON.parse(localStorage.getItem("droneChapterCleared_" + license) || "{}");
+    return (obj && typeof obj === "object") ? obj : {};
+  }catch(e){ return {}; }
+}
+
+function setChapterCleared(license, chapterId, on){
+  const obj = loadChapterCleared(license);
+  if(!!obj[chapterId] === on) return;
+  if(on) obj[chapterId] = true; else delete obj[chapterId];
+  try{ localStorage.setItem("droneChapterCleared_" + license, JSON.stringify(obj)); }catch(e){ /* 保存不可環境ではスキップ */ }
+}
+
+function setChapterView(view){
+  state.chapterView = view;
+  renderChapterList();
+}
+
+function startChapterWrong(chapterId){
+  const questions = wrongQuestionsFor(chapterId, state.license);
+  if(questions.length === 0){
+    showToast('この章に間違えた問題はありません。');
+    return;
+  }
+  state.mode = 'chapterWrong';
+  state.chapter = CHAPTERS.find(c => c.id === chapterId);
+  state.sessionQuestions = shuffle(questions);
+  state.currentIndex = 0;
+  state.correctCount = 0;
+  state.selectedIndex = null;
+  state.isRevealed = false;
+  document.getElementById('quizChapterTitle').textContent = `第${chapterId}章（間違えた問題のみ）`;
+  showScreen('quizScreen');
+  renderQuestion();
+}
+
+function updateRemainBadge(){
+  const el = document.getElementById('quizRemainBadge');
+  if(state.mode !== 'chapterWrong'){ el.style.display = 'none'; return; }
+  const n = wrongQuestionsFor(state.chapter.id, state.license).length;
+  el.style.display = 'inline-block';
+  el.classList.toggle('done', n === 0);
+  el.textContent = n === 0 ? '🎉 対策完了！' : `あと ${n} 問`;
 }
 
 let toastTimer = null;
@@ -2912,11 +3002,22 @@ function setLicense(license){
 function renderChapterList(){
   const list = document.getElementById('chapterList');
   list.innerHTML = '';
+  const wrongView = state.chapterView === 'wrong';
+  document.querySelectorAll('#chapterViewSeg button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'wrong') === wrongView));
   CHAPTERS.forEach(ch => {
     const count = questionsFor(ch.id, state.license).length;
+    const remain = wrongView ? wrongQuestionsFor(ch.id, state.license).length : 0;
+    const cleared = wrongView && remain === 0 && !!loadChapterCleared(state.license)[ch.id];
     const card = document.createElement('div');
-    card.className = 'chapter-card';
-    card.onclick = () => { if(count>0) startQuiz(ch.id); };
+    card.className = 'chapter-card' + (cleared ? ' cleared' : '');
+    card.onclick = () => {
+      if(wrongView) startChapterWrong(ch.id);
+      else if(count>0) startQuiz(ch.id);
+    };
+    const side = !wrongView ? `<span class="count">${count}問</span>`
+      : cleared ? `<span class="clear-badge">🎉 対策完了！</span>`
+      : remain > 0 ? `<span class="wrong-badge">あと ${remain} 問</span>`
+      : `<span class="wrong-badge none">誤答なし</span>`;
     card.innerHTML = `
       <div class="chapter-icon">${ICONS[ch.icon]}</div>
       <div class="chapter-meta">
@@ -2925,7 +3026,7 @@ function renderChapterList(){
         <div class="subtitle">${ch.subtitle}</div>
       </div>
       <div class="chapter-side">
-        <span class="count">${count}問</span>
+        ${side}
         ${ICONS.chevronRight}
       </div>
     `;
@@ -2958,6 +3059,7 @@ function renderQuestion(){
   const q = currentQuestion();
   const total = state.sessionQuestions.length;
 
+  updateRemainBadge();
   if(state.mode === 'daily'){
     document.getElementById('quizChapterTitle').textContent = `今日のおすすめ問題（${state.currentIndex+1} / ${total}）`;
   }
@@ -2991,6 +3093,7 @@ function selectChoice(idx){
   const isCorrect = idx === q.correct;
   if(isCorrect) state.correctCount++;
   recordAnswer(q.id, isCorrect);
+  updateRemainBadge();
 
   const rows = document.querySelectorAll('#choiceList .choice-row');
   rows.forEach((row, i) => {
@@ -3049,13 +3152,20 @@ function showResult(){
   const accuracy = total>0 ? state.correctCount/total : 0;
   const great = accuracy >= 0.8;
 
-  document.getElementById('resultTitle').textContent =
+  const wrongLeft = state.mode === 'chapterWrong' ? wrongQuestionsFor(state.chapter.id, state.license).length : 0;
+  const chapterDone = state.mode === 'chapterWrong' && wrongLeft === 0;
+  const titleEl = document.getElementById('resultTitle');
+  titleEl.textContent =
+    chapterDone ? '🎉 対策完了！' :
+    state.mode === 'chapterWrong' ? `第${state.chapter.id}章 間違えた問題のみ 完了` :
     state.mode === 'daily' ? '本日の学習完了！' :
     state.mode === 'weak' ? '弱点克服モード 完了' : `第${state.chapter.id}章 完了`;
-  document.getElementById('resultScore').textContent = `${state.correctCount} / ${total} 問正解`;
+  titleEl.style.color = chapterDone ? '#eab308' : '';
+  document.getElementById('resultScore').textContent = `${state.correctCount} / ${total} 問正解` +
+    (state.mode === 'chapterWrong' && wrongLeft > 0 ? `（この章の誤答 あと${wrongLeft}問）` : '');
 
   const iconWrap = document.getElementById('resultIconWrap');
-  const showStar = great || state.mode === 'daily';
+  const showStar = great || state.mode === 'daily' || chapterDone;
   iconWrap.className = 'result-icon ' + (showStar ? 'great' : 'retry');
   iconWrap.innerHTML = showStar ? ICONS.star : ICONS.retry;
 
@@ -3066,6 +3176,12 @@ function showResult(){
 function retryChapter(){
   if(state.mode === 'daily'){
     startDailyMode();
+  } else if(state.mode === 'chapterWrong'){
+    if(wrongQuestionsFor(state.chapter.id, state.license).length === 0){
+      backToMenu();
+      return;
+    }
+    startChapterWrong(state.chapter.id);
   } else if(state.mode === 'weak'){
     const remaining = loadWrongIds(state.license);
     if(remaining.length === 0){
@@ -3089,6 +3205,7 @@ function showScreen(id){
 
 function backToMenu(){
   showScreen('menuScreen');
+  renderChapterList();
   renderCountdown();
   renderWeakPointCard();
   renderProgressGauge();
