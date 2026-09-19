@@ -921,6 +921,21 @@
   .upd-list{ margin:0; padding-left:18px; font-size:calc(12.5px * var(--fs)); line-height:1.8; color:var(--text-secondary); }
   .about{ margin-top:22px; text-align:center; font-size:calc(10.5px * var(--fs)); line-height:1.8; color:var(--text-tertiary); }
 
+  /* ---------- first-class calculation bootcamp ---------- */
+  .bootcamp-wrap{ margin:16px 20px 24px; }
+  .bootcamp-btn{
+    width:100%; display:flex; align-items:center; gap:12px; padding:15px 16px;
+    border:none; border-radius:18px; cursor:pointer; text-align:left; font:inherit; color:#fff;
+    background:linear-gradient(135deg, #ff9800 0%, #f44336 100%);
+    box-shadow:0 10px 24px rgba(244,67,54,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .bootcamp-btn:active{ transform:scale(0.98); }
+  .bc-icon{ flex:0 0 auto; width:46px; height:46px; border-radius:50%; background:rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .bc-meta{ flex:1 1 auto; min-width:0; }
+  .bc-meta b{ display:block; font-size:calc(14.5px * var(--fs)); font-weight:800; line-height:1.35; }
+  .bc-meta small{ display:block; margin-top:3px; font-size:calc(11.5px * var(--fs)); font-weight:700; line-height:1.4; color:rgba(255,255,255,0.9); }
+  .bc-go{ flex:0 0 auto; font-size:22px; }
+
   /* ================= responsive: real mobile browsers ================= */
   @media (max-width:480px){
     body{ background:var(--navy-deep); }
@@ -1018,6 +1033,7 @@
             <button type="button" data-v="wrong" onclick="setChapterView('wrong')">章から選ぶ（間違えた問題のみ）</button>
           </div>
           <div class="chapter-list" id="chapterList"></div>
+          <div class="bootcamp-wrap" id="bootcampWrap"></div>
           </div>
 
           <div class="pane" id="materialsPane">
@@ -5303,14 +5319,15 @@ function renderCbtInfo(){
   if(!seg) return;
   seg.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.v === cbt.mode));
   const m = CBT_MODES[cbt.mode];
-  const pool = QUESTIONS.filter(q => q.licenses.includes(state.license)).length;
-  const n = Math.min(m.count, pool);
+  const plan = cbtPlan(m.count, state.license);
   const weak = loadWrongIds(state.license).length;
+  const mix = plan.calcN > 0
+    ? `内訳：計算・リスク管理 <b>${plan.calcN}問（固定）</b> ＋ 文章問題 ${plan.restN}問<br>` : '';
   document.getElementById('cbtInfo').innerHTML = `
-    <b>${state.license === 'first' ? '一等' : '二等'}資格</b>（出題プール ${pool}問）<br>
-    出題数 <b>${n}問</b> ／ 制限時間 <b>${m.seconds/60}分</b><br>
+    <b>${state.license === 'first' ? '一等' : '二等'}資格</b>（出題プール ${plan.pool.length}問）<br>
+    出題数 <b>${plan.n}問</b> ／ 制限時間 <b>${m.seconds/60}分</b><br>
     合格基準 <b>${m.pass}問（80%）以上</b>正解<br>
-    苦手克服優先：誤答履歴（現在${weak}問）から最大${Math.round(n*CBT_WEAK_RATIO)}問を優先出題`;
+    ${mix}苦手克服優先：誤答履歴（現在${weak}問）から最大${plan.weakMax}問を優先出題`;
 }
 
 function renderCbtGraph(){
@@ -5343,16 +5360,37 @@ function renderCbtGraph(){
     ${grid}${line('total','#38bdf8')}${line('correct','#33b373')}${dots('total','#38bdf8',-8)}${dots('correct','#33b373',15)}${xl}</svg>`;
 }
 
-function buildCbtQuestions(count){
-  const lic = state.license;
+/* 本番再現の出題内訳。一等のみ「計算・リスク管理」を試験全体の10%（50問→5問、10問→1問）に固定し、
+   残りを文章問題から抽出する。二等は従来どおり（計算・リスク管理は一等専用のため混ざらない）。 */
+const CALC_CATEGORY = "計算・リスク管理";
+const CBT_CALC_RATIO = 0.1;
+
+function cbtPlan(count, lic){
   const pool = QUESTIONS.filter(q => q.licenses.includes(lic));
   const n = Math.min(count, pool.length);
+  if(lic !== 'first') return { pool, n, calcN:0, restN:n, weakMax:Math.round(n * CBT_WEAK_RATIO) };
+  const calcPool = pool.filter(q => q.category === CALC_CATEGORY);
+  const calcN = Math.min(Math.round(n * CBT_CALC_RATIO), calcPool.length);
+  const restN = n - calcN;
+  return { pool, n, calcN, restN, weakMax:Math.floor(restN * CBT_WEAK_RATIO + 1e-9) };
+}
+
+function buildCbtQuestions(count){
+  const lic = state.license;
+  const { pool, n, calcN, restN, weakMax } = cbtPlan(count, lic);
+  const isCalc = q => q.category === CALC_CATEGORY;
+  const textPool = lic === 'first' ? pool.filter(q => !isCalc(q)) : pool;
+  // 1) 計算・リスク管理を固定数だけランダム抽出（一等のみ）
+  const calc = lic === 'first' ? shuffle(pool.filter(isCalc)).slice(0, calcN) : [];
+  // 2) 残り枠：誤答履歴を最大30%枠に強制注入（計算・リスク管理以外から）
+  const textIds = new Set(textPool.map(q => q.id));
   const wrong = shuffle(loadWrongIds(lic)
     .map(id => QUESTIONS.find(q => q.id === id))
-    .filter(q => q && q.licenses.includes(lic))).slice(0, Math.round(n * CBT_WEAK_RATIO));
+    .filter(q => q && q.licenses.includes(lic) && textIds.has(q.id))).slice(0, weakMax);
   const picked = new Set(wrong.map(q => q.id));
-  const rest = shuffle(pool.filter(q => !picked.has(q.id))).slice(0, n - wrong.length);
-  return shuffle(wrong.concat(rest));
+  // 3) 残りを通常のランダムで補完
+  const rest = shuffle(textPool.filter(q => !picked.has(q.id))).slice(0, restN - wrong.length);
+  return shuffle(calc.concat(wrong, rest));
 }
 
 function fmtTime(sec){
@@ -5590,6 +5628,46 @@ function toggleUpdateInfo(){
   if(open){ lsSet(UPDATE_SEEN_KEY, APP_VERSION); renderUpdateBadge(); }
 }
 
+/* =========================================================
+   一等「計算問題集中特訓（ブートキャンプ）」
+   一等の category:"計算・リスク管理" だけを全問出題（誤答履歴にある問題を先頭に、残りはランダム順）。
+   正誤判定・誤答履歴・解説/出典は既存の章別学習と同じ処理（recordAnswer / renderQuestion）を流用。
+   ========================================================= */
+function bootcampPool(){
+  return QUESTIONS.filter(q => q.licenses.includes('first') && q.category === CALC_CATEGORY);
+}
+
+function renderBootcamp(){
+  const wrap = document.getElementById('bootcampWrap');
+  if(!wrap) return;
+  if(state.license !== 'first'){ wrap.innerHTML = ''; return; }
+  const n = bootcampPool().length;
+  const weak = bootcampPool().filter(q => loadWrongIds('first').includes(q.id)).length;
+  wrap.innerHTML = `
+    <button class="bootcamp-btn" onclick="startBootcamp()">
+      <span class="bc-icon">🏋️</span>
+      <span class="bc-meta"><b>一等計算問題集中特訓（ブートキャンプ）</b><small>🧮 計算・リスク管理 全${n}問${weak > 0 ? ` ／ 🔥 苦手${weak}問を先頭に出題` : ''}</small></span>
+      <span class="bc-go">⚡️</span>
+    </button>`;
+}
+
+function startBootcamp(){
+  if(state.license !== 'first') return;
+  const pool = bootcampPool();
+  if(pool.length === 0){ showToast('計算・リスク管理の問題がありません。'); return; }
+  const wrongIds = new Set(loadWrongIds('first'));
+  state.mode = 'bootcamp';
+  state.chapter = null;
+  state.sessionQuestions = shuffle(pool.filter(q => wrongIds.has(q.id))).concat(shuffle(pool.filter(q => !wrongIds.has(q.id))));
+  state.currentIndex = 0;
+  state.correctCount = 0;
+  state.selectedIndex = null;
+  state.isRevealed = false;
+  document.getElementById('quizChapterTitle').textContent = `🔥 一等計算特訓ブートキャンプ（全${pool.length}問）`;
+  showScreen('quizScreen');
+  renderQuestion();
+}
+
 function shuffle(arr){
   const a = arr.slice();
   for(let i=a.length-1;i>0;i--){
@@ -5614,6 +5692,7 @@ function setLicense(license){
   document.getElementById('menuSubtitle').textContent =
     (license==='first' ? '一等' : '二等') + '資格の出題範囲を、教則の章ごとに演習できます。';
   renderChapterList();
+  renderBootcamp();
   renderWeakPointCard();
   renderProgressGauge();
 }
@@ -5776,6 +5855,7 @@ function showResult(){
   const titleEl = document.getElementById('resultTitle');
   titleEl.textContent =
     chapterDone ? '🎉 対策完了！' :
+    state.mode === 'bootcamp' ? '🔥 一等計算特訓 完了' :
     state.mode === 'chapterWrong' ? `第${state.chapter.id}章 間違えた問題のみ 完了` :
     state.mode === 'daily' ? '本日の学習完了！' :
     state.mode === 'weak' ? '弱点克服モード 完了' : `第${state.chapter.id}章 完了`;
@@ -5795,6 +5875,8 @@ function showResult(){
 function retryChapter(){
   if(state.mode === 'daily'){
     startDailyMode();
+  } else if(state.mode === 'bootcamp'){
+    startBootcamp();
   } else if(state.mode === 'chapterWrong'){
     if(wrongQuestionsFor(state.chapter.id, state.license).length === 0){
       backToMenu();
@@ -5825,6 +5907,7 @@ function showScreen(id){
 function backToMenu(){
   showScreen('menuScreen');
   renderChapterList();
+  renderBootcamp();
   renderCountdown();
   renderWeakPointCard();
   renderProgressGauge();
@@ -5854,6 +5937,7 @@ renderKisokuVersion();
 checkRemoteRevision();
 renderCbtInfo();
 renderCbtGraph();
+renderBootcamp();
 syncDisplayUI();
 renderSyncStatus();
 renderUpdateBadge();
