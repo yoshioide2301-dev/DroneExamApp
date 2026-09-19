@@ -740,6 +740,63 @@
   .update-banner .ok{ background:var(--accent); color:#fff; }
   .update-banner .later{ background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.85); }
 
+  /* ---------- CBT mock exam ---------- */
+  .cbt-seg{ margin:16px 20px 0; }
+  .cbt-info{
+    margin:12px 20px 0; padding:14px 16px; border-radius:16px;
+    background:var(--card-bg); border:1px solid var(--card-border);
+    font-size:12.5px; line-height:1.8; color:var(--text-secondary);
+  }
+  .cbt-info b{ color:#fff; }
+  .cbt-graph{ margin:14px 20px 24px; padding:14px 12px 10px; border-radius:16px; background:var(--card-bg); border:1px solid var(--card-border); }
+  .cbt-graph-title{ display:flex; justify-content:space-between; align-items:center; padding:0 4px 6px; font-size:12.5px; font-weight:800; }
+  .cbt-legend{ display:flex; gap:12px; font-size:10.5px; font-weight:700; color:var(--text-secondary); }
+  .cbt-legend i{ display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .cbt-graph svg{ width:100%; height:auto; display:block; }
+  .cbt-empty{ padding:20px 0; text-align:center; font-size:12px; color:var(--text-tertiary); }
+
+  .cbt-timer-bar{
+    position:sticky; top:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 16px; background:var(--navy-top); border-bottom:1px solid var(--card-border);
+  }
+  .cbt-timer{ font-size:30px; font-weight:800; letter-spacing:1px; font-variant-numeric:tabular-nums; color:#fff; }
+  .cbt-timer.warn{ color:var(--failure); animation:cbtBlink 1s steps(2,start) infinite; }
+  @keyframes cbtBlink{ 50%{ opacity:0.25; } }
+  .cbt-num{ font-size:12px; font-weight:800; color:var(--text-secondary); min-width:56px; text-align:right; }
+  .cbt-body{ padding-bottom:28px; }
+  .choice-row.sel{ background:var(--accent-soft); border-color:var(--accent); }
+  .choice-row.sel .choice-badge{ background:var(--accent); color:#fff; }
+  .cbt-locked .choice-row, .cbt-locked button{ pointer-events:none; opacity:0.6; }
+  .cbt-nav{ display:flex; gap:10px; margin-top:18px; }
+  .cbt-nav .secondary-btn{ flex:1; }
+  .cbt-nav .secondary-btn:disabled{ opacity:0.35; }
+  .cbt-jump{ display:grid; grid-template-columns:repeat(auto-fill,minmax(34px,1fr)); gap:6px; margin:18px 0; }
+  .cbt-jump button{
+    padding:7px 0; border-radius:8px; font:inherit; font-size:11px; font-weight:700; cursor:pointer;
+    border:1px solid var(--card-border); background:var(--card-bg); color:var(--text-secondary);
+  }
+  .cbt-jump button.done{ background:var(--accent-soft); color:#fff; }
+  .cbt-jump button.cur{ border-color:var(--warn); color:var(--warn); }
+  .cbt-finish{ margin-top:6px; }
+  .cbt-modal{
+    position:absolute; inset:0; z-index:80; display:none;
+    align-items:center; justify-content:center; padding:24px;
+    background:rgba(0,10,22,0.75);
+  }
+  .cbt-modal.show{ display:flex; }
+  .cbt-modal-card{
+    width:100%; padding:24px 20px; border-radius:18px; text-align:center;
+    background:linear-gradient(180deg, var(--navy-top) 0%, var(--navy-deep) 100%);
+    border:1px solid rgba(230,83,77,0.5); box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  }
+  .cbt-modal-card p{ margin:0 0 18px; font-size:17px; font-weight:800; color:var(--failure); line-height:1.5; }
+  .cbt-badge{
+    display:inline-block; padding:10px 26px; border-radius:99px; font-size:18px; font-weight:800;
+  }
+  .cbt-badge.pass{ background:var(--success-soft); color:var(--success); border:1px solid var(--success); }
+  .cbt-badge.fail{ background:var(--failure-soft); color:var(--failure); border:1px solid var(--failure); }
+
   /* ================= responsive: real mobile browsers ================= */
   @media (max-width:480px){
     body{ background:var(--navy-deep); }
@@ -798,6 +855,7 @@
           <div class="tab-bar" role="tablist">
             <button class="tab-btn active" id="tabPractice" onclick="setTab('practice')">問題演習</button>
             <button class="tab-btn" id="tabMaterials" onclick="setTab('materials')">学習資料</button>
+            <button class="tab-btn" id="tabCbt" onclick="setTab('cbt')">模擬試験</button>
           </div>
 
           <div class="pane active" id="practicePane">
@@ -836,6 +894,16 @@
               <button onclick="forceRevision('6.0')">【開発者用デバッグ】自律リサーチ（教則第6版検知）のモック発火</button>
               <button onclick="resetKisokuVersion()">【開発者用デバッグ】第5版の状態に戻す</button>
             </div>
+          </div>
+
+          <div class="pane" id="cbtPane">
+            <div class="seg cbt-seg" id="cbtModeSeg">
+              <button type="button" class="active" data-v="full" onclick="setCbtMode('full')">本番モード（50問）</button>
+              <button type="button" data-v="mini" onclick="setCbtMode('mini')">ミニテスト（10問）</button>
+            </div>
+            <div class="cbt-info" id="cbtInfo"></div>
+            <div class="daily-wrap"><button class="daily-btn" onclick="startCbt()">試験を開始する</button></div>
+            <div class="cbt-graph" id="cbtGraph"></div>
           </div>
         </section>
 
@@ -885,9 +953,52 @@
           </div>
         </section>
 
+        <!-- ============ CBT EXAM SCREEN ============ -->
+        <section class="screen" id="cbtScreen">
+          <div class="cbt-timer-bar">
+            <button class="back-btn" onclick="abortCbt()" aria-label="中断">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <div class="cbt-timer" id="cbtTimer">30:00</div>
+            <div class="cbt-num" id="cbtNum">1 / 50</div>
+          </div>
+          <div class="quiz-body cbt-body">
+            <div class="question-text" id="cbtQuestionText"></div>
+            <div class="choice-list" id="cbtChoiceList"></div>
+            <div class="cbt-nav">
+              <button class="secondary-btn" id="cbtPrev" onclick="moveCbt(-1)">前の問題</button>
+              <button class="secondary-btn" id="cbtNext" onclick="moveCbt(1)">次の問題</button>
+            </div>
+            <div class="cbt-jump" id="cbtJump"></div>
+            <button class="primary-btn cbt-finish" onclick="finishCbt(true)">試験を終了する</button>
+          </div>
+        </section>
+
+        <!-- ============ CBT RESULT SCREEN ============ -->
+        <section class="screen" id="cbtResultScreen">
+          <div class="result-wrap">
+            <div class="cbt-badge pass" id="cbtResultBadge">合格</div>
+            <div>
+              <p class="result-title" id="cbtResultScore"></p>
+              <p class="result-score" id="cbtResultSub"></p>
+            </div>
+            <div class="result-actions">
+              <button class="primary-btn" onclick="startCbt()">もう一度受験する</button>
+              <button class="secondary-btn" onclick="backToCbtTab()">成長グラフを見る</button>
+            </div>
+          </div>
+        </section>
+
       </div>
 
       <div class="toast" id="toast"></div>
+
+      <div class="cbt-modal" id="cbtTimeoutModal">
+        <div class="cbt-modal-card">
+          <p>時間終了です。試験を終えてください。</p>
+          <button class="primary-btn" onclick="confirmCbtTimeUp()">確認</button>
+        </div>
+      </div>
 
       <div class="sheet-backdrop" id="reportBackdrop" onclick="closeReport()"></div>
       <div class="sheet" id="reportSheet" role="dialog" aria-modal="true" aria-label="問題や解説の気になる点を報告">
@@ -2447,12 +2558,13 @@ function toggleAccordion(id){
 }
 
 function setTab(tab){
-  const isMat = tab === 'materials';
-  document.getElementById('practicePane').classList.toggle('active', !isMat);
-  document.getElementById('materialsPane').classList.toggle('active', isMat);
-  document.getElementById('tabPractice').classList.toggle('active', !isMat);
-  document.getElementById('tabMaterials').classList.toggle('active', isMat);
-  if(isMat) checkRemoteRevision();
+  const ids = { practice:'Practice', materials:'Materials', cbt:'Cbt' };
+  Object.keys(ids).forEach(t => {
+    document.getElementById(t + 'Pane').classList.toggle('active', t === tab);
+    document.getElementById('tab' + ids[t]).classList.toggle('active', t === tab);
+  });
+  if(tab === 'materials') checkRemoteRevision();
+  if(tab === 'cbt'){ renderCbtInfo(); renderCbtGraph(); }
 }
 
 /* =========================================================
@@ -2540,6 +2652,233 @@ function resetKisokuVersion(){
   saveKisokuVersion(KISOKU_BASE_VERSION);
   dismissUpdate();
   renderKisokuVersion();
+}
+
+/* =========================================================
+   本番疑似CBT・模擬試験モード
+   LocalStorage: cbt_exam_history = [{date:"YYYY-MM-DD", total:回答総数, correct:正解数}, ...]
+   （キー未作成時のみ、右肩上がりの初期ダミー3件を自動注入）
+   ========================================================= */
+const CBT_HISTORY_KEY = "cbt_exam_history";
+const CBT_WEAK_RATIO = 0.3;
+const CBT_MODES = {
+  full: { label:'本番モード',     count:50, seconds:1800, pass:40, warn:180 },
+  mini: { label:'ミニテストモード', count:10, seconds:360,  pass:8,  warn:60  },
+};
+const cbt = { mode:'full', questions:[], answers:[], index:0, endAt:0, timer:null, locked:false };
+
+function ymd(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function dummyCbtHistory(){
+  return [[3,35,22],[2,45,36],[1,50,41]].map(([ago,total,correct]) => {
+    const d = new Date(); d.setDate(d.getDate() - ago);
+    return { date:ymd(d), total, correct };
+  });
+}
+
+function saveCbtHistory(h){
+  try{ localStorage.setItem(CBT_HISTORY_KEY, JSON.stringify(h)); }catch(e){ /* 保存不可環境ではスキップ */ }
+}
+
+function loadCbtHistory(){
+  try{
+    const raw = localStorage.getItem(CBT_HISTORY_KEY);
+    if(raw === null){
+      const h = dummyCbtHistory();
+      saveCbtHistory(h);
+      return h;
+    }
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr)
+      ? arr.filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && Number.isFinite(r.total) && Number.isFinite(r.correct))
+      : [];
+  }catch(e){
+    return dummyCbtHistory();
+  }
+}
+
+function setCbtMode(mode){
+  cbt.mode = mode;
+  renderCbtInfo();
+}
+
+function renderCbtInfo(){
+  const seg = document.getElementById('cbtModeSeg');
+  if(!seg) return;
+  seg.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.v === cbt.mode));
+  const m = CBT_MODES[cbt.mode];
+  const pool = QUESTIONS.filter(q => q.licenses.includes(state.license)).length;
+  const n = Math.min(m.count, pool);
+  const weak = loadWrongIds(state.license).length;
+  document.getElementById('cbtInfo').innerHTML = `
+    <b>${state.license === 'first' ? '一等' : '二等'}資格</b>（出題プール ${pool}問）<br>
+    出題数 <b>${n}問</b> ／ 制限時間 <b>${m.seconds/60}分</b><br>
+    合格基準 <b>${m.pass}問（80%）以上</b>正解<br>
+    苦手克服優先：誤答履歴（現在${weak}問）から最大${Math.round(n*CBT_WEAK_RATIO)}問を優先出題`;
+}
+
+function renderCbtGraph(){
+  const wrap = document.getElementById('cbtGraph');
+  if(!wrap) return;
+  const h = loadCbtHistory().slice(-5);
+  const head = `<div class="cbt-graph-title"><span>成長グラフ（直近${h.length}回）</span>
+    <span class="cbt-legend"><span><i style="background:#38bdf8"></i>総回答数</span><span><i style="background:#33b373"></i>正解数</span></span></div>`;
+  if(h.length === 0){
+    wrap.innerHTML = head + '<div class="cbt-empty">まだ試験履歴がありません。</div>';
+    return;
+  }
+  const W = 320, H = 210, L = 30, R = 14, T = 22, B = 30, inset = 16;
+  const pw = W - L - R, ph = H - T - B;
+  const y = v => T + ph * (1 - Math.min(50, Math.max(0, v)) / 50);
+  const x = i => h.length === 1 ? L + pw/2 : L + inset + i * (pw - 2*inset) / (h.length - 1);
+  const grid = [0,10,20,30,40,50].map(v =>
+    `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,${v === 0 ? 0.25 : 0.08})"/>` +
+    `<text x="${L-6}" y="${y(v)+3}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)">${v}</text>`).join('');
+  const line = (k, c) => h.length < 2 ? '' :
+    `<polyline points="${h.map((r,i) => `${x(i).toFixed(1)},${y(r[k]).toFixed(1)}`).join(' ')}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const dots = (k, c, dy) => h.map((r,i) =>
+    `<circle cx="${x(i).toFixed(1)}" cy="${y(r[k]).toFixed(1)}" r="3.6" fill="${c}" stroke="#0a2a4d" stroke-width="1.5"/>` +
+    `<text x="${x(i).toFixed(1)}" y="${(y(r[k]) + dy).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${c}">${r[k]}</text>`).join('');
+  const xl = h.map((r,i) => {
+    const [, m, d] = r.date.split('-');
+    return `<text x="${x(i).toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="9.5" fill="rgba(255,255,255,0.55)">${+m}/${+d}</text>`;
+  }).join('');
+  wrap.innerHTML = head + `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="試験回ごとの総回答数と正解数の推移">
+    ${grid}${line('total','#38bdf8')}${line('correct','#33b373')}${dots('total','#38bdf8',-8)}${dots('correct','#33b373',15)}${xl}</svg>`;
+}
+
+function buildCbtQuestions(count){
+  const lic = state.license;
+  const pool = QUESTIONS.filter(q => q.licenses.includes(lic));
+  const n = Math.min(count, pool.length);
+  const wrong = shuffle(loadWrongIds(lic)
+    .map(id => QUESTIONS.find(q => q.id === id))
+    .filter(q => q && q.licenses.includes(lic))).slice(0, Math.round(n * CBT_WEAK_RATIO));
+  const picked = new Set(wrong.map(q => q.id));
+  const rest = shuffle(pool.filter(q => !picked.has(q.id))).slice(0, n - wrong.length);
+  return shuffle(wrong.concat(rest));
+}
+
+function fmtTime(sec){
+  return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+}
+
+function startCbt(){
+  const m = CBT_MODES[cbt.mode];
+  cbt.questions = buildCbtQuestions(m.count);
+  cbt.answers = new Array(cbt.questions.length).fill(null);
+  cbt.index = 0;
+  cbt.locked = false;
+  cbt.endAt = Date.now() + m.seconds * 1000;
+  document.getElementById('cbtScreen').classList.remove('cbt-locked');
+  showScreen('cbtScreen');
+  renderCbtQuestion();
+  tickCbt();
+  clearInterval(cbt.timer);
+  cbt.timer = setInterval(tickCbt, 250);
+}
+
+function tickCbt(){
+  const remain = Math.max(0, Math.ceil((cbt.endAt - Date.now()) / 1000));
+  const el = document.getElementById('cbtTimer');
+  el.textContent = fmtTime(remain);
+  el.classList.toggle('warn', remain <= CBT_MODES[cbt.mode].warn);
+  if(remain === 0 && !cbt.locked) cbtTimeUp();
+}
+
+function cbtTimeUp(){
+  cbt.locked = true;
+  clearInterval(cbt.timer);
+  document.getElementById('cbtScreen').classList.add('cbt-locked');
+  document.getElementById('cbtTimeoutModal').classList.add('show');
+}
+
+function confirmCbtTimeUp(){
+  document.getElementById('cbtTimeoutModal').classList.remove('show');
+  finishCbt(false);
+}
+
+function renderCbtQuestion(){
+  const q = cbt.questions[cbt.index];
+  const total = cbt.questions.length;
+  document.getElementById('cbtNum').textContent = `${cbt.index+1} / ${total}`;
+  document.getElementById('cbtQuestionText').textContent = q.question;
+  const list = document.getElementById('cbtChoiceList');
+  list.innerHTML = '';
+  q.choices.forEach((text, idx) => {
+    const row = document.createElement('div');
+    row.className = 'choice-row' + (cbt.answers[cbt.index] === idx ? ' sel' : '');
+    row.onclick = () => selectCbtChoice(idx);
+    row.innerHTML = `<div class="choice-badge">${CHOICE_LABELS[idx] || '?'}</div><div class="choice-text">${text}</div>`;
+    list.appendChild(row);
+  });
+  document.getElementById('cbtPrev').disabled = cbt.index === 0;
+  document.getElementById('cbtNext').disabled = cbt.index === total - 1;
+  document.getElementById('cbtJump').innerHTML = cbt.questions.map((_, i) =>
+    `<button class="${cbt.answers[i] !== null ? 'done' : ''} ${i === cbt.index ? 'cur' : ''}" onclick="gotoCbt(${i})">${i+1}</button>`).join('');
+}
+
+function selectCbtChoice(idx){
+  if(cbt.locked) return;
+  cbt.answers[cbt.index] = idx;
+  renderCbtQuestion();
+}
+
+function gotoCbt(i){
+  if(cbt.locked) return;
+  cbt.index = i;
+  renderCbtQuestion();
+  window.scrollTo(0, 0);
+  document.getElementById('cbtScreen').scrollIntoView({ block:'start' });
+}
+
+function moveCbt(d){ gotoCbt(Math.min(cbt.questions.length - 1, Math.max(0, cbt.index + d))); }
+
+function abortCbt(){
+  if(cbt.locked) return;
+  if(!confirm('試験を中断しますか？この試験の記録は残りません。')) return;
+  clearInterval(cbt.timer);
+  backToMenu();
+  setTab('cbt');
+}
+
+function finishCbt(manual){
+  if(cbt.locked && manual) return;
+  if(manual){
+    const un = cbt.answers.filter(a => a === null).length;
+    if(!confirm(un > 0 ? `未回答が${un}問あります。試験を終了しますか？` : '試験を終了しますか？')) return;
+  }
+  clearInterval(cbt.timer);
+  cbt.locked = true;
+
+  const m = CBT_MODES[cbt.mode];
+  let answered = 0, correct = 0;
+  cbt.questions.forEach((q, i) => {
+    if(cbt.answers[i] === null) return;
+    answered++;
+    const ok = cbt.answers[i] === q.correct;
+    if(ok) correct++;
+    recordAnswer(q.id, ok);
+  });
+  const history = loadCbtHistory();
+  history.push({ date:ymd(new Date()), total:answered, correct });
+  saveCbtHistory(history);
+
+  const total = cbt.questions.length;
+  const pass = correct >= m.pass;
+  document.getElementById('cbtResultBadge').className = 'cbt-badge ' + (pass ? 'pass' : 'fail');
+  document.getElementById('cbtResultBadge').textContent = pass ? '🎉 合格' : '❌ 不合格';
+  document.getElementById('cbtResultScore').textContent = `${total}問中 ${correct}問正解`;
+  document.getElementById('cbtResultSub').textContent =
+    `${m.label} ／ 回答済み ${answered}問・未回答 ${total - answered}問 ／ 合格基準 ${m.pass}問以上`;
+  showScreen('cbtResultScreen');
+}
+
+function backToCbtTab(){
+  backToMenu();
+  setTab('cbt');
 }
 
 function shuffle(arr){
@@ -2777,6 +3116,8 @@ renderCountdown();
 renderAmendments();
 renderKisokuVersion();
 checkRemoteRevision();
+renderCbtInfo();
+renderCbtGraph();
 initClock();
 </script>
 
