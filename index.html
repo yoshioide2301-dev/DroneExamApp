@@ -819,6 +819,24 @@
   }
   .remain-badge.done{ color:#1a1400; background:linear-gradient(135deg,#facc15,#eab308); border-color:#eab308; }
 
+  /* ---------- study material figures (large, mobile-first) ---------- */
+  .mat-title{ margin:16px 20px 0; font-size:15px; font-weight:800; line-height:1.5; }
+  .mat-title small{ display:block; margin-top:2px; font-size:11px; font-weight:700; color:#ffc94d; }
+  .vis{ margin:12px 0 4px; padding:14px; background:#16223f; border:1px solid #2a3a5a; border-radius:12px; text-align:center; }
+  .vis-cap{ font-size:12px; line-height:1.6; color:#cbd5e1; margin:6px 0; }
+  .vis-box{ padding:12px 10px; border-radius:10px; background:#1e2942; border:1px solid #2a3a5a; color:#e2e8f0; font-size:13px; line-height:1.5; flex:1; }
+  .vis-box.big{ font-size:14px; }
+  .vis-box b{ color:#38bdf8; font-size:16px; }
+  .vis-box small{ display:block; font-size:11px; color:#94a3b8; margin-top:2px; }
+  .vis-or{ margin:6px 0; font-size:12px; font-weight:800; color:#fbbf24; }
+  .vis-arrow{ margin:8px 0; font-size:16px; color:#64748b; }
+  .vis-row{ display:flex; align-items:stretch; gap:8px; margin-top:8px; }
+  .vis-and{ align-self:center; font-size:13px; font-weight:800; color:#fbbf24; }
+  .vis-ok{ padding:11px 10px; border-radius:10px; background:rgba(51,179,115,0.16); border:1px solid #33b373; color:#4ade80; font-size:13.5px; font-weight:800; line-height:1.5; }
+  .vis-ng{ padding:9px 10px; border-radius:10px; background:rgba(239,68,68,0.14); border:1px dashed #ef4444; color:#f87171; font-size:12.5px; font-weight:800; }
+  .vis-chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:10px; }
+  .vis-chips span{ padding:5px 10px; border-radius:99px; background:#1e2942; border:1px solid #2a3a5a; color:#e2e8f0; font-size:11.5px; font-weight:700; }
+
   /* ================= responsive: real mobile browsers ================= */
   @media (max-width:480px){
     body{ background:var(--navy-deep); }
@@ -914,10 +932,11 @@
           </div>
 
           <div class="pane" id="materialsPane">
+            <div class="mat-title">無人航空機操縦士教則 第5版 変更点5選<small>2026年7月14日適用</small></div>
             <div class="mat-head" id="matHead"></div>
             <div class="acc-list" id="accList"></div>
             <div class="mat-debug">
-              <button onclick="forceRevision('6.0')">【開発者用デバッグ】自律リサーチ（教則第6版検知）のモック発火</button>
+              <button onclick="forceRevision('6.0')">【テスト用】自律リサーチ（教則第6版）検知を擬似発火</button>
               <button onclick="resetKisokuVersion()">【開発者用デバッグ】第5版の状態に戻す</button>
             </div>
           </div>
@@ -2491,126 +2510,118 @@ function submitReport(){
 const amendmentData = [
   {
     id: "amend_01",
-    title: "1. カテゴリーⅡ飛行の細分化（ⅡA・ⅡB）",
-    trend: "出題傾向・社会情勢",
-    summary: "教則第5版の最重要改訂ポイント。立入管理措置の有無によりカテゴリーⅡ飛行が細分化され、補助者配置や立入管理措置を講じる「ⅡA」と、それらを省略して飛行させる「ⅡB」に厳格に区別されました。試験では、ⅡAとⅡBの要件の入れ替えひっかけ問題が頻出します。",
-    visualType: "table",
+    title: "1. 保険付保の範囲拡大（25kg以上・レベル3.5）",
+    trend: "第5版 変更点①・安全運航",
+    summary: "総重量25kg以上の機体を飛行させる場合や、レベル3.5飛行を行う場合には、第三者賠償責任保険への加入が「求められる」こととなりました。すべての飛行で必須になったわけではなく、リスクの高い特定の飛行が対象である点が試験で問われます。",
+    visualType: "html",
     visualContent: `
-      <div style="overflow-x:auto; margin: 12px 0; border: 1px solid #2a3a5a; border-radius: 6px;">
-        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; background:#16223f; color:#e2e8f0;">
-          <thead>
-            <tr style="background:#1e2942; border-bottom:2px solid #2a3a5a;">
-              <th style="padding:10px;">分類</th>
-              <th style="padding:10px;">立入管理措置</th>
-              <th style="padding:10px;">補助者の配置</th>
-              <th style="padding:10px;">飛行形態の例</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom:1px solid #2a3a5a;">
-              <td style="padding:10px; font-weight:bold; color:#38bdf8;">カテゴリーⅡA</td>
-              <td style="padding:10px;">【必要】（立入禁止区画の設定等）</td>
-              <td style="padding:10px;">【原則必要】</td>
-              <td style="padding:10px;">催し物上空、目視外、夜間、DID上空など</td>
-            </tr>
-            <tr>
-              <td style="padding:10px; font-weight:bold; color:#fbbf24;">カテゴリーⅡB</td>
-              <td style="padding:10px;">【不要】（機体・操縦者の要件緩和時）</td>
-              <td style="padding:10px;">【省略可能】</td>
-              <td style="padding:10px;">十分な安全確保措置を講じた特定の目視内飛行など</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="vis">
+        <div class="vis-cap">第三者賠償責任保険への加入が求められる飛行</div>
+        <div class="vis-box big">総重量 <b>25kg以上</b> の機体を飛行させる場合<small>（カテゴリーⅡ飛行）</small></div>
+        <div class="vis-or">または</div>
+        <div class="vis-box big"><b>レベル3.5飛行</b>を行う場合</div>
+        <div class="vis-arrow">▼</div>
+        <div class="vis-ok">第三者賠償責任保険への加入が求められる</div>
+        <div class="vis-cap" style="margin-top:10px;">※ すべての飛行で必須ではなく、上記の特定飛行が対象</div>
       </div>
     `
   },
   {
     id: "amend_02",
-    title: "2. 重要施設周辺飛行禁止法：対象拡大（1,000m規則）",
-    trend: "社会情勢・セキュリティ（最新の法改正）",
-    summary: "最新の法改正により、飛行禁止範囲が対象施設の敷地周囲「おおむね300m」から「おおむね1,000m（約1km）」に拡大されました。敷地内だけでなく『周辺地域』まで禁止範囲が及び、拡大後の数値が試験で狙われます。",
+    title: "2. 工業専用地域は、DID規制の対象外に",
+    trend: "第5版 変更点②・規制緩和",
+    summary: "都市計画法上の「工業専用地域」内の区域の上空については、人口集中地区（DID）に該当していても、DIDに係る許可・承認手続きが不要（免除）となりました。工場地帯などでの点検飛行を円滑化するための【緩和】措置です。従来の『DIDは一律で許可が必要』という認識との入れ替えひっかけに注意してください。",
     visualType: "svg",
     visualContent: `
-      <div style="display:flex; justify-content:center; margin:12px 0; background:#16223f; padding:15px; border-radius:6px; border:1px solid #2a3a5a;">
-        <svg width="280" height="140" viewBox="0 0 280 140" style="max-width:100%;">
-          <rect x="120" y="55" width="40" height="30" rx="4" fill="#ef4444" opacity="0.8"/>
-          <text x="140" y="73" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">対象施設</text>
-          <circle cx="140" cy="70" r="55" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4"/>
-          <line x1="140" y1="70" x2="195" y2="70" stroke="#38bdf8" stroke-width="1.5"/>
-          <polygon points="195,67 202,70 195,73" fill="#38bdf8"/>
-          <text x="170" y="65" font-size="10" fill="#38bdf8" text-anchor="middle" font-weight="bold">概ね1,000m</text>
-          <text x="140" y="132" font-size="11" fill="#f87171" text-anchor="middle" font-weight="bold">【周辺地域上空も原則飛行禁止】</text>
+      <div class="vis">
+        <svg viewBox="0 0 320 210" style="width:100%;height:auto;display:block;" role="img" aria-label="人口集中地区の内側にある工業専用地域は、DIDに係る手続きが不要">
+          <rect x="8" y="8" width="304" height="194" rx="14" fill="rgba(239,68,68,0.10)" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,4"/>
+          <text x="160" y="30" text-anchor="middle" font-size="13" font-weight="bold" fill="#f87171">人口集中地区（DID）</text>
+          <text x="160" y="47" text-anchor="middle" font-size="10.5" fill="#f87171">原則：飛行に許可・承認が必要</text>
+          <rect x="44" y="64" width="232" height="126" rx="12" fill="rgba(51,179,115,0.16)" stroke="#33b373" stroke-width="2.5"/>
+          <text x="160" y="96" text-anchor="middle" font-size="15" font-weight="bold" fill="#4ade80">工業専用地域</text>
+          <text x="160" y="116" text-anchor="middle" font-size="10.5" fill="#86efac">（都市計画法上の区域）</text>
+          <line x1="76" y1="128" x2="244" y2="128" stroke="#33b373" stroke-opacity="0.5"/>
+          <text x="160" y="152" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff">DIDに係る許可・承認手続き</text>
+          <text x="160" y="176" text-anchor="middle" font-size="18" font-weight="bold" fill="#4ade80">不要（免除）</text>
         </svg>
+        <div class="vis-cap">工場地帯などでの点検飛行を円滑化するための【緩和】措置</div>
       </div>
     `
   },
   {
     id: "amend_03",
-    title: "3. 技能証明（免許）更新：申請可能期間の厳格化",
-    trend: "出題傾向・制度改訂",
-    summary: "無人航空機操縦士の技能証明書の有効期間は3年です。更新申請ができる期間は、有効期間が満了する日の『6ヶ月前から1ヶ月前まで』です。満了1ヶ月を切ると申請できない点に注意してください。期間に関する数字（3年、6ヶ月前、1ヶ月前）は実務・試験ともに頻出です。",
+    title: "3. 農薬空中散布：承認申請が不要に（AND条件）",
+    trend: "第5版 変更点③・規制緩和",
+    summary: "農薬散布の飛行で、機体認証（第二種以上）を受けた機体を、技能証明（二等以上）を持つ操縦者が飛行させる場合には、夜間飛行・目視外飛行・第三者から30m未満の飛行・危険物輸送・物件投下に係る承認手続き等が不要となりました。2つの条件をどちらも満たすことが必要で、片方だけでは免除されません。",
     visualType: "html",
     visualContent: `
-      <div style="margin:12px 0; background:#16223f; padding:12px; border-radius:6px; border:1px solid #2a3a5a; font-size:12px; line-height:1.6;">
-        <div style="display:flex; align-items:center; margin-bottom:8px;">
-          <span style="background:#ef4444; color:white; padding:2px 6px; border-radius:4px; font-weight:bold; margin-right:8px; font-size:11px;">有効期間</span>
-          <span style="color:#e2e8f0; font-weight:bold;">交付から 【 3年間 】</span>
+      <div class="vis">
+        <div class="vis-cap">次の <b style="color:#fbbf24;">2条件をどちらも</b> 満たす場合（AND条件）</div>
+        <div class="vis-row">
+          <div class="vis-box big"><b>機体認証</b><small>第二種以上</small></div>
+          <div class="vis-and">AND</div>
+          <div class="vis-box big"><b>技能証明</b><small>二等以上</small></div>
         </div>
-        <div style="display:flex; align-items:center; background:#1e2942; padding:8px; border-radius:4px; border-left:4px solid #38bdf8;">
-          <div>
-            <span style="color:#38bdf8; font-weight:bold;">更新申請可能期間：</span><br>
-            有効期間が満了する日の <span style="color:#fbbf24; font-weight:bold; font-size:14px;">6ヶ月前</span> から <span style="color:#fbbf24; font-weight:bold; font-size:14px;">1ヶ月前</span> まで
-          </div>
+        <div class="vis-arrow">▼</div>
+        <div class="vis-ok">次の承認手続き等が不要（農薬散布の飛行）</div>
+        <div class="vis-chips">
+          <span>夜間飛行</span><span>目視外飛行</span><span>第三者から30m未満の飛行</span><span>危険物輸送</span><span>物件投下</span>
         </div>
-        <p style="color:#94a3b8; font-size:11px; margin-top:6px; margin-bottom:0;">※満了1ヶ月前を切ると更新申請できないため、ひっかけに注意。</p>
+        <div class="vis-ng" style="margin-top:10px;">どちらか一方だけでは 免除されない</div>
       </div>
     `
   },
   {
     id: "amend_04",
-    title: "4. 線状降水帯・極端な気象異常とドローン運航判断",
-    trend: "近年の気象異常・安全運航",
-    summary: "近年発生が相次ぐゲリラ豪雨や線状降水帯など、急速に発達する積乱雲による極端な気象異常への対策が重視されています。教則では、突発的な強風やダウンバースト、急激な視程悪化リスクが明記されており、これらを検知した場合は速やかに飛行を中止し安全に降下・着陸させることが義務付けられています。",
+    title: "4. 技能証明の更新申請期間の見直し",
+    trend: "第5版 変更点④・出題頻出",
+    summary: "技能証明の更新申請ができる期間は、有効期間が満了する日の「6ヶ月前から1ヶ月前まで」となりました。従来は「満了前6ヶ月以内」であれば直前まで申請できましたが、満了1ヶ月前を切ると申請できません。（有効期間は3年）",
     visualType: "svg",
     visualContent: `
-      <div style="display:flex; justify-content:center; margin:12px 0; background:#16223f; padding:15px; border-radius:6px; border:1px solid #2a3a5a;">
-        <svg width="280" height="140" viewBox="0 0 280 140" style="max-width:100%;">
-          <defs>
-            <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#475569" />
-              <stop offset="100%" stop-color="#1e293b" />
-            </linearGradient>
-          </defs>
-          <path d="M40,90 Q30,70 50,50 Q70,20 110,30 Q140,10 180,30 Q220,20 230,50 Q250,75 230,95 Z" fill="url(#cloudGrad)"/>
-          <line x1="70" y1="85" x2="50" y2="130" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.5"/>
-          <line x1="110" y1="85" x2="90" y2="130" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.5"/>
-          <line x1="150" y1="85" x2="130" y2="130" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.5"/>
-          <path d="M140,50 L140,105 M135,100 L140,107 L145,100" stroke="#f43f5e" stroke-width="3" fill="none"/>
-          <text x="146" y="95" font-size="9" fill="#f43f5e" font-weight="bold">強風・下降気流</text>
-          <circle cx="70" cy="110" r="4" fill="#ef4444"/>
-          <line x1="60" y1="110" x2="80" y2="110" stroke="#fff" stroke-width="1.5"/>
-          <text x="82" y="113" font-size="9" fill="#f87171" font-weight="bold">⚠️安全に降下・着陸</text>
+      <div class="vis">
+        <svg viewBox="0 0 320 170" style="width:100%;height:auto;display:block;" role="img" aria-label="更新申請可能期間は満了日の6ヶ月前から1ヶ月前まで">
+          <rect x="36" y="46" width="210" height="30" fill="rgba(51,179,115,0.35)" stroke="#33b373" stroke-width="1.5"/>
+          <text x="141" y="66" text-anchor="middle" font-size="13" font-weight="bold" fill="#4ade80">申請できる</text>
+          <rect x="246" y="46" width="42" height="30" fill="rgba(239,68,68,0.35)" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="267" y="66" text-anchor="middle" font-size="10" font-weight="bold" fill="#f87171">不可</text>
+          <line x1="20" y1="61" x2="36" y2="61" stroke="#64748b" stroke-width="2"/>
+          <line x1="288" y1="30" x2="288" y2="92" stroke="#fbbf24" stroke-width="2.5"/>
+          <line x1="246" y1="38" x2="246" y2="84" stroke="#fff" stroke-width="1.5"/>
+          <line x1="36" y1="38" x2="36" y2="84" stroke="#fff" stroke-width="1.5"/>
+          <text x="36" y="106" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">6ヶ月前</text>
+          <text x="246" y="106" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">1ヶ月前</text>
+          <text x="288" y="24" text-anchor="middle" font-size="11" font-weight="bold" fill="#fbbf24">満了日</text>
+          <text x="160" y="138" text-anchor="middle" font-size="10.5" fill="#94a3b8">旧：満了前6ヶ月以内なら満了直前まで申請可</text>
+          <rect x="36" y="146" width="252" height="6" rx="3" fill="#475569"/>
         </svg>
+        <div class="vis-cap">新：6ヶ月前 〜 1ヶ月前 ／ 1ヶ月を切ると申請不可（有効期間は3年）</div>
       </div>
     `
   },
   {
     id: "amend_05",
-    title: "5. 工業専用地域におけるDID規制の緩和",
-    trend: "出題傾向・規制緩和",
-    summary: "都市計画法上の「工業専用地域」内の区域の上空については、人口集中地区（DID）に該当していても、DIDに係る許可・承認手続きが不要（免除）となりました。工場地帯などでの点検飛行を円滑化するための【緩和】措置です（国交省 教則第5版より引用）。従来の『DIDは一律で許可が必要』という認識との入れ替えひっかけに注意してください。",
-    visualType: "html",
+    title: "5. 小型無人機等飛行禁止法：1,000mに拡大",
+    trend: "第5版 変更点⑤・法改正",
+    summary: "小型無人機等飛行禁止法の対象施設周辺（イエローゾーン）が、敷地周囲「おおむね300m」から「おおむね1,000m（約1km）」へ大幅に拡大されました。対象施設は国会議事堂・首相官邸・皇居・外国公館・防衛関係施設・空港・原子力事業所などで、100g未満の機体（模型航空機）も規制の対象です。違反には拘禁刑・罰金が科されます。",
+    visualType: "svg",
     visualContent: `
-      <div style="margin:12px 0; background:#16223f; padding:12px; border-radius:6px; border:1px solid #2a3a5a; font-size:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; margin-bottom:8px;">
-          <div style="background:#334155; padding:6px 10px; border-radius:4px; width:45%; color:#cbd5e1;">工業専用地域<br>(工場地帯等)</div>
-          <div style="font-size:16px; color:#33b373; font-weight:bold;">＋</div>
-          <div style="background:#475569; padding:6px 10px; border-radius:4px; width:45%; color:white; font-weight:bold;">DID地区<br>(人口集中地区)</div>
+      <div class="vis">
+        <svg viewBox="0 0 320 230" style="width:100%;height:auto;display:block;" role="img" aria-label="対象施設の周囲おおむね300mからおおむね1,000mへの拡大">
+          <circle cx="160" cy="112" r="98" fill="rgba(239,68,68,0.13)" stroke="#ef4444" stroke-width="2.5"/>
+          <circle cx="160" cy="112" r="29" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4,4"/>
+          <rect x="146" y="102" width="28" height="20" rx="3" fill="#ef4444"/>
+          <text x="160" y="116" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#fff">対象施設</text>
+          <line x1="174" y1="112" x2="258" y2="112" stroke="#38bdf8" stroke-width="1.8"/>
+          <polygon points="258,108 266,112 258,116" fill="#38bdf8"/>
+          <text x="216" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#38bdf8">おおむね1,000m</text>
+          <text x="160" y="160" text-anchor="middle" font-size="10" fill="#94a3b8">旧：おおむね300m（点線）</text>
+          <text x="160" y="222" text-anchor="middle" font-size="12" font-weight="bold" fill="#f87171">周辺地域の上空も原則 飛行禁止</text>
+        </svg>
+        <div class="vis-chips">
+          <span>国会議事堂</span><span>首相官邸</span><span>皇居</span><span>外国公館</span><span>防衛関係施設</span><span>空港</span><span>原子力事業所</span>
         </div>
-        <div style="background:#1e2942; padding:8px; border-radius:4px; text-align:center; border:1px dashed #33b373; color:#4ade80; font-weight:bold;">
-          【緩和】DIDに係る許可・承認手続きは不要（免除）
-        </div>
-        <p style="color:#94a3b8; font-size:11px; margin-top:6px; margin-bottom:0; text-align:center;">工場地帯などでの点検飛行を円滑化するための緩和措置（国交省 教則第5版より引用）</p>
+        <div class="vis-cap" style="margin-top:10px;">100g未満の機体（模型航空機）も規制対象 ／ 罰則：拘禁刑・罰金</div>
       </div>
     `
   }
