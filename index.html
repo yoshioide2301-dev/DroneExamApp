@@ -696,6 +696,50 @@
   .sheet-actions .primary-btn{ flex:2; }
   .sheet-actions .secondary-btn{ flex:1; }
 
+  /* ---------- study tabs / materials / update banner ---------- */
+  .tab-bar{ display:flex; gap:6px; margin:14px 20px 0; padding:4px; background:rgba(255,255,255,0.06); border-radius:14px; }
+  .tab-btn{
+    flex:1; border:none; padding:10px 0; border-radius:10px; cursor:pointer;
+    background:transparent; color:var(--text-secondary); font:inherit; font-size:13px; font-weight:700;
+  }
+  .tab-btn.active{ background:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(43,115,250,0.35); }
+  .pane{ display:none; }
+  .pane.active{ display:block; animation:fadeIn .25s ease; }
+  .mat-head{ margin:16px 20px 0; font-size:12px; font-weight:700; color:var(--text-secondary); }
+  .mat-head b{ color:#ffc94d; }
+  .acc-list{ margin:10px 20px 0; display:flex; flex-direction:column; gap:10px; }
+  .acc-item{ background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; overflow:hidden; }
+  .acc-item.open{ border-color:rgba(43,115,250,0.45); }
+  .acc-head{
+    width:100%; display:flex; align-items:center; gap:10px; padding:14px 16px;
+    background:none; border:none; color:#fff; font:inherit; text-align:left; cursor:pointer;
+  }
+  .acc-title{ flex:1; min-width:0; font-size:13.5px; font-weight:800; line-height:1.45; }
+  .acc-chev{ flex:0 0 auto; width:16px; height:16px; color:rgba(255,255,255,0.5); transition:transform .3s ease; }
+  .acc-item.open .acc-chev{ transform:rotate(180deg); color:var(--accent); }
+  .acc-body{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+  .acc-item.open .acc-body{ grid-template-rows:1fr; }
+  .acc-inner{ overflow:hidden; min-height:0; }
+  .acc-content{ padding:0 16px 14px; }
+  .acc-trend{ display:inline-block; font-size:10.5px; font-weight:800; color:var(--warn); background:var(--warn-soft); padding:3px 9px; border-radius:99px; margin-bottom:8px; }
+  .acc-summary{ font-size:12.5px; line-height:1.7; color:rgba(255,255,255,0.82); margin:0; }
+  .mat-debug{ margin:40px 20px 24px; padding:10px; border-radius:10px; background:#1a233a; display:flex; flex-direction:column; gap:6px; }
+  .mat-debug button{
+    background:none; border:none; padding:6px 4px; text-align:left; cursor:pointer;
+    font:inherit; font-size:10.5px; color:#64748b;
+  }
+  .update-banner{
+    display:none; margin:12px 20px 0; padding:14px 16px; border-radius:16px;
+    background:linear-gradient(135deg, rgba(43,115,250,0.22) 0%, rgba(43,115,250,0.06) 100%);
+    border:1px solid rgba(43,115,250,0.5); animation:slideDown .25s ease;
+  }
+  .update-banner.show{ display:block; }
+  .update-banner p{ margin:0 0 10px; font-size:12.5px; line-height:1.6; }
+  .update-banner .btns{ display:flex; gap:8px; }
+  .update-banner .btns button{ flex:1; padding:10px 0; border-radius:10px; border:none; font:inherit; font-size:12.5px; font-weight:800; cursor:pointer; }
+  .update-banner .ok{ background:var(--accent); color:#fff; }
+  .update-banner .later{ background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.85); }
+
   /* ================= responsive: real mobile browsers ================= */
   @media (max-width:480px){
     body{ background:var(--navy-deep); }
@@ -749,6 +793,14 @@
             <p id="menuSubtitle">二等資格の出題範囲を、教則の章ごとに演習できます。</p>
           </div>
 
+          <div class="update-banner" id="updateBanner"></div>
+
+          <div class="tab-bar" role="tablist">
+            <button class="tab-btn active" id="tabPractice" onclick="setTab('practice')">問題演習</button>
+            <button class="tab-btn" id="tabMaterials" onclick="setTab('materials')">学習資料</button>
+          </div>
+
+          <div class="pane active" id="practicePane">
           <div class="license-picker" id="licensePicker">
             <div class="license-thumb" id="licenseThumb"></div>
             <button class="license-btn" id="btnFirst" onclick="setLicense('first')">一等資格</button>
@@ -768,13 +820,23 @@
           <div class="compliance-banner">
             <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12.2l2 2 4.2-4.2"/></svg></div>
             <div class="texts">
-              <b>国土交通省 教則第5版 準拠</b>
+              <b id="kisokuBannerText">国土交通省 教則第5版 準拠</b>
               <span>全設問に該当教則ページを明示</span>
             </div>
           </div>
 
           <div class="section-title">章から選ぶ</div>
           <div class="chapter-list" id="chapterList"></div>
+          </div>
+
+          <div class="pane" id="materialsPane">
+            <div class="mat-head" id="matHead"></div>
+            <div class="acc-list" id="accList"></div>
+            <div class="mat-debug">
+              <button onclick="forceRevision('6.0')">【開発者用デバッグ】自律リサーチ（教則第6版検知）のモック発火</button>
+              <button onclick="resetKisokuVersion()">【開発者用デバッグ】第5版の状態に戻す</button>
+            </div>
+          </div>
         </section>
 
         <!-- ============ QUIZ SCREEN ============ -->
@@ -2221,6 +2283,265 @@ function submitReport(){
   showToast('ご報告ありがとうございます。内容を確認します。');
 }
 
+/* =========================================================
+   学習資料タブ（改正ポイント・アコーディオン）
+   図表は<table>と基本図形(SVG)のみで構成したオリジナル表現
+   ========================================================= */
+const amendmentData = [
+  {
+    id: "amend_01",
+    title: "1. カテゴリーⅡ飛行の細分化（ⅡA・ⅡB）",
+    trend: "出題傾向・社会情勢",
+    summary: "教則第5版の最重要改訂ポイント。立入管理措置の有無によりカテゴリーⅡ飛行が細分化され、補助者配置や立入管理措置を講じる「ⅡA」と、それらを省略して飛行させる「ⅡB」に厳格に区別されました。試験では、ⅡAとⅡBの要件の入れ替えひっかけ問題が頻出します。",
+    visualType: "table",
+    visualContent: `
+      <div style="overflow-x:auto; margin: 12px 0; border: 1px solid #2a3a5a; border-radius: 6px;">
+        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; background:#16223f; color:#e2e8f0;">
+          <thead>
+            <tr style="background:#1e2942; border-bottom:2px solid #2a3a5a;">
+              <th style="padding:10px;">分類</th>
+              <th style="padding:10px;">立入管理措置</th>
+              <th style="padding:10px;">補助者の配置</th>
+              <th style="padding:10px;">飛行形態の例</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #2a3a5a;">
+              <td style="padding:10px; font-weight:bold; color:#38bdf8;">カテゴリーⅡA</td>
+              <td style="padding:10px;">【必要】（立入禁止区画の設定等）</td>
+              <td style="padding:10px;">【原則必要】</td>
+              <td style="padding:10px;">催し物上空、目視外、夜間、DID上空など</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; font-weight:bold; color:#fbbf24;">カテゴリーⅡB</td>
+              <td style="padding:10px;">【不要】（機体・操縦者の要件緩和時）</td>
+              <td style="padding:10px;">【省略可能】</td>
+              <td style="padding:10px;">十分な安全確保措置を講じた特定の目視内飛行など</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `
+  },
+  {
+    id: "amend_02",
+    title: "2. 重要施設周辺飛行禁止法：対象拡大（1,000m規則）",
+    trend: "社会情勢・セキュリティ（最新の法改正）",
+    summary: "最新の法改正により、飛行禁止範囲が対象施設の敷地周囲「おおむね300m」から「おおむね1,000m（約1km）」に拡大されました。敷地内だけでなく『周辺地域』まで禁止範囲が及び、拡大後の数値が試験で狙われます。",
+    visualType: "svg",
+    visualContent: `
+      <div style="display:flex; justify-content:center; margin:12px 0; background:#16223f; padding:15px; border-radius:6px; border:1px solid #2a3a5a;">
+        <svg width="280" height="140" viewBox="0 0 280 140" style="max-width:100%;">
+          <rect x="120" y="55" width="40" height="30" rx="4" fill="#ef4444" opacity="0.8"/>
+          <text x="140" y="73" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">対象施設</text>
+          <circle cx="140" cy="70" r="55" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4"/>
+          <line x1="140" y1="70" x2="195" y2="70" stroke="#38bdf8" stroke-width="1.5"/>
+          <polygon points="195,67 202,70 195,73" fill="#38bdf8"/>
+          <text x="170" y="65" font-size="10" fill="#38bdf8" text-anchor="middle" font-weight="bold">概ね1,000m</text>
+          <text x="140" y="132" font-size="11" fill="#f87171" text-anchor="middle" font-weight="bold">【周辺地域上空も原則飛行禁止】</text>
+        </svg>
+      </div>
+    `
+  },
+  {
+    id: "amend_03",
+    title: "3. 技能証明（免許）更新：申請可能期間の厳格化",
+    trend: "出題傾向・制度改訂",
+    summary: "無人航空機操縦士の技能証明書の有効期間は3年です。更新申請ができる期間は、有効期間が満了する日の『6ヶ月前から1ヶ月前まで』です。満了1ヶ月を切ると申請できない点に注意してください。期間に関する数字（3年、6ヶ月前、1ヶ月前）は実務・試験ともに頻出です。",
+    visualType: "html",
+    visualContent: `
+      <div style="margin:12px 0; background:#16223f; padding:12px; border-radius:6px; border:1px solid #2a3a5a; font-size:12px; line-height:1.6;">
+        <div style="display:flex; align-items:center; margin-bottom:8px;">
+          <span style="background:#ef4444; color:white; padding:2px 6px; border-radius:4px; font-weight:bold; margin-right:8px; font-size:11px;">有効期間</span>
+          <span style="color:#e2e8f0; font-weight:bold;">交付から 【 3年間 】</span>
+        </div>
+        <div style="display:flex; align-items:center; background:#1e2942; padding:8px; border-radius:4px; border-left:4px solid #38bdf8;">
+          <div>
+            <span style="color:#38bdf8; font-weight:bold;">更新申請可能期間：</span><br>
+            有効期間が満了する日の <span style="color:#fbbf24; font-weight:bold; font-size:14px;">6ヶ月前</span> から <span style="color:#fbbf24; font-weight:bold; font-size:14px;">1ヶ月前</span> まで
+          </div>
+        </div>
+        <p style="color:#94a3b8; font-size:11px; margin-top:6px; margin-bottom:0;">※満了1ヶ月前を切ると更新申請できないため、ひっかけに注意。</p>
+      </div>
+    `
+  },
+  {
+    id: "amend_04",
+    title: "4. 線状降水帯・極端な気象異常とドローン運航判断",
+    trend: "近年の気象異常・安全運航",
+    summary: "近年発生が相次ぐゲリラ豪雨や線状降水帯など、急速に発達する積乱雲による極端な気象異常への対策が重視されています。教則では、突発的な強風やダウンバースト、急激な視程悪化リスクが明記されており、これらを検知した場合は速やかに飛行を中止し安全に降下・着陸させることが義務付けられています。",
+    visualType: "svg",
+    visualContent: `
+      <div style="display:flex; justify-content:center; margin:12px 0; background:#16223f; padding:15px; border-radius:6px; border:1px solid #2a3a5a;">
+        <svg width="280" height="140" viewBox="0 0 280 140" style="max-width:100%;">
+          <defs>
+            <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#475569" />
+              <stop offset="100%" stop-color="#1e293b" />
+            </linearGradient>
+          </defs>
+          <path d="M40,90 Q30,70 50,50 Q70,20 110,30 Q140,10 180,30 Q220,20 230,50 Q250,75 230,95 Z" fill="url(#cloudGrad)"/>
+          <line x1="70" y1="85" x2="50" y2="130" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.5"/>
+          <line x1="110" y1="85" x2="90" y2="130" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.5"/>
+          <line x1="150" y1="85" x2="130" y2="130" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.5"/>
+          <path d="M140,50 L140,105 M135,100 L140,107 L145,100" stroke="#f43f5e" stroke-width="3" fill="none"/>
+          <text x="146" y="95" font-size="9" fill="#f43f5e" font-weight="bold">強風・下降気流</text>
+          <circle cx="70" cy="110" r="4" fill="#ef4444"/>
+          <line x1="60" y1="110" x2="80" y2="110" stroke="#fff" stroke-width="1.5"/>
+          <text x="82" y="113" font-size="9" fill="#f87171" font-weight="bold">⚠️安全に降下・着陸</text>
+        </svg>
+      </div>
+    `
+  },
+  {
+    id: "amend_05",
+    title: "5. 工業専用地域におけるDID規制の緩和",
+    trend: "出題傾向・規制緩和",
+    summary: "都市計画法上の「工業専用地域」内の区域の上空については、人口集中地区（DID）に該当していても、DIDに係る許可・承認手続きが不要（免除）となりました。工場地帯などでの点検飛行を円滑化するための【緩和】措置です（国交省 教則第5版より引用）。従来の『DIDは一律で許可が必要』という認識との入れ替えひっかけに注意してください。",
+    visualType: "html",
+    visualContent: `
+      <div style="margin:12px 0; background:#16223f; padding:12px; border-radius:6px; border:1px solid #2a3a5a; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; margin-bottom:8px;">
+          <div style="background:#334155; padding:6px 10px; border-radius:4px; width:45%; color:#cbd5e1;">工業専用地域<br>(工場地帯等)</div>
+          <div style="font-size:16px; color:#33b373; font-weight:bold;">＋</div>
+          <div style="background:#475569; padding:6px 10px; border-radius:4px; width:45%; color:white; font-weight:bold;">DID地区<br>(人口集中地区)</div>
+        </div>
+        <div style="background:#1e2942; padding:8px; border-radius:4px; text-align:center; border:1px dashed #33b373; color:#4ade80; font-weight:bold;">
+          【緩和】DIDに係る許可・承認手続きは不要（免除）
+        </div>
+        <p style="color:#94a3b8; font-size:11px; margin-top:6px; margin-bottom:0; text-align:center;">工場地帯などでの点検飛行を円滑化するための緩和措置（国交省 教則第5版より引用）</p>
+      </div>
+    `
+  }
+];
+
+const CHEVRON_SVG = '<svg class="acc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+/* 自律アップデート(第6版)適用時に差し替わる、シミュレーション用ダミーデータ */
+const amendmentDataV6Sim = Object.fromEntries(amendmentData.map(a => [a.id, {
+  trend: "自律アップデート（第6版対応）",
+  summary: `【シミュレーション用ダミーデータ】自律アップデートにより第6版対応の解説へ切り替わりました。「${a.title}」の内容は実際の教則第6版ではありません。`,
+  visualContent: `<div style="margin:12px 0; padding:12px; border-radius:6px; border:1px dashed #38bdf8; background:#16223f; color:#38bdf8; font-size:12px; text-align:center;">（第6版対応ダミー図表）</div>`,
+}]));
+
+function renderAmendments(){
+  const list = document.getElementById('accList');
+  const applied = loadKisokuVersion() !== KISOKU_BASE_VERSION;
+  list.innerHTML = amendmentData.map(a => applied ? { ...a, ...amendmentDataV6Sim[a.id] } : a).map(a => `
+    <div class="acc-item" id="acc_${a.id}">
+      <button class="acc-head" aria-expanded="false" onclick="toggleAccordion('${a.id}')">
+        <span class="acc-title">${a.title}</span>${CHEVRON_SVG}
+      </button>
+      <div class="acc-body"><div class="acc-inner"><div class="acc-content">
+        <span class="acc-trend">${a.trend}</span>
+        <p class="acc-summary">${a.summary}</p>
+        ${a.visualContent}
+      </div></div></div>
+    </div>`).join('');
+}
+
+function toggleAccordion(id){
+  const item = document.getElementById('acc_' + id);
+  const open = item.classList.toggle('open');
+  item.querySelector('.acc-head').setAttribute('aria-expanded', open);
+}
+
+function setTab(tab){
+  const isMat = tab === 'materials';
+  document.getElementById('practicePane').classList.toggle('active', !isMat);
+  document.getElementById('materialsPane').classList.toggle('active', isMat);
+  document.getElementById('tabPractice').classList.toggle('active', !isMat);
+  document.getElementById('tabMaterials').classList.toggle('active', isMat);
+  if(isMat) checkRemoteRevision();
+}
+
+/* =========================================================
+   自律リサーチ・法改正アップデート（擬似ロジック）
+   LocalStorage: droneKisokuVersion（適用済み教則版数, 既定 "5.0"）
+   REMOTE_REVISION_URL に {"version":"6.0"} を返すJSONのURLを設定すると実チェックに切替
+   （空の間は検知なし。強制発火ボタンで動作をシミュレーション）
+   ========================================================= */
+const KISOKU_VERSION_KEY = "droneKisokuVersion";
+const KISOKU_BASE_VERSION = "5.0";
+const REMOTE_REVISION_URL = "";
+let pendingRevision = null;
+
+function loadKisokuVersion(){
+  try{
+    const v = localStorage.getItem(KISOKU_VERSION_KEY);
+    return /^\d+(\.\d+)?$/.test(v || "") ? v : KISOKU_BASE_VERSION;
+  }catch(e){ return KISOKU_BASE_VERSION; }
+}
+
+function saveKisokuVersion(v){
+  try{ localStorage.setItem(KISOKU_VERSION_KEY, v); }catch(e){ /* 保存不可環境ではスキップ */ }
+}
+
+function kisokuLabel(v){
+  return v === KISOKU_BASE_VERSION
+    ? '教則第5版対応'
+    : `最新：教則第${Math.floor(parseFloat(v))}版（自律アップデート適用済）`;
+}
+
+function renderKisokuVersion(){
+  renderAmendments();
+  const v = loadKisokuVersion();
+  const head = document.getElementById('matHead');
+  if(head) head.innerHTML = `適用中の教則： <b>${kisokuLabel(v)}</b>`;
+  const b = document.getElementById('kisokuBannerText');
+  if(b) b.textContent = v === KISOKU_BASE_VERSION ? '国土交通省 教則第5版 準拠' : kisokuLabel(v);
+}
+
+async function fetchRemoteRevision(){
+  if(!REMOTE_REVISION_URL) return null;
+  try{
+    const res = await fetch(REMOTE_REVISION_URL, { cache:"no-store" });
+    const j = await res.json();
+    return /^\d+(\.\d+)?$/.test(j && j.version) ? j.version : null;
+  }catch(e){ return null; }
+}
+
+async function checkRemoteRevision(){
+  const remote = await fetchRemoteRevision();
+  if(remote && parseFloat(remote) > parseFloat(loadKisokuVersion())) showUpdateBanner(remote);
+}
+
+function showUpdateBanner(version){
+  pendingRevision = version;
+  const n = Math.floor(parseFloat(version));
+  const el = document.getElementById('updateBanner');
+  el.innerHTML = `
+    <p><b>【法改正検知】</b>教則第${n}版（または最新の法改正）の改訂を自律リサーチにより検知しました。問題データおよび解説のアップデート（第${n}版対応）を適用しますか？</p>
+    <div class="btns">
+      <button class="later" onclick="dismissUpdate()">あとで</button>
+      <button class="ok" onclick="applyUpdate()">適用する</button>
+    </div>`;
+  el.classList.add('show');
+}
+
+function dismissUpdate(){
+  pendingRevision = null;
+  document.getElementById('updateBanner').classList.remove('show');
+}
+
+function applyUpdate(){
+  if(pendingRevision) saveKisokuVersion(pendingRevision);
+  dismissUpdate();
+  renderKisokuVersion();
+  showToast('アップデートを適用しました。');
+}
+
+function forceRevision(v){
+  showUpdateBanner(v);
+  document.getElementById('updateBanner').scrollIntoView({ block:'nearest', behavior:'smooth' });
+}
+
+function resetKisokuVersion(){
+  saveKisokuVersion(KISOKU_BASE_VERSION);
+  dismissUpdate();
+  renderKisokuVersion();
+}
+
 function shuffle(arr){
   const a = arr.slice();
   for(let i=a.length-1;i>0;i--){
@@ -2453,6 +2774,9 @@ renderChapterList();
 renderWeakPointCard();
 renderProgressGauge();
 renderCountdown();
+renderAmendments();
+renderKisokuVersion();
+checkRemoteRevision();
 initClock();
 </script>
 
