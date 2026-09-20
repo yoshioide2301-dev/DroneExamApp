@@ -8631,7 +8631,7 @@ function startBootcamp(){
    誤答履歴のある問題を先頭に、残りはランダム順。正誤判定・誤答履歴・履歴ドット・再開セーブは既存処理を流用。
    学習資料（変更点5選）との相互ショートカットあり。
    ========================================================= */
-const CORE_ID_RE = /^2-H1(0[1-9]|[1-4]\d|50)$/;
+const CORE_ID_RE = /^2-H0(0[1-9]|[1-4]\d|50)$/; /* 2-H001〜2-H050＝カテゴリ「第5版 改正点」（改訂5点に特化した問題のみ） */
 let coreInProgress = false;
 
 function corePool(){
@@ -8648,7 +8648,7 @@ function renderCore(){
   wrap.innerHTML = `
     <div class="core-card">
       <div class="core-title">🌿 教則第5版・最新改訂コア特訓（ブートキャンプ）</div>
-      <div class="core-sub">最新改訂の核心 全${n}問を集中周回${weak > 0 ? ` ／ 🔥 苦手${weak}問を先頭に出題` : ''}</div>
+      <div class="core-sub">改訂5点（小型無人機等1,000m・農薬散布・更新期間・保険・工業専用地域）全${n}問を集中周回${weak > 0 ? ` ／ 🔥 苦手${weak}問を先頭に出題` : ''}</div>
       <button type="button" class="core-btn primary" onclick="startCore()"><span>💥 最新コア特訓（全${n}問）をスタート</span><span>⚡️</span></button>
       <button type="button" class="core-btn" onclick="openMaterialsTab()"><span>📄 教則第5版 変更点5点の徹底解説（学習資料）</span><span>›</span></button>
     </div>`;
@@ -8991,6 +8991,7 @@ function loadResumeState(){
     if(!d || !RESUME_MODES[d.mode] || (d.license !== 'first' && d.license !== 'second')) return null;
     if(!Array.isArray(d.ids) || d.ids.length === 0 || !Number.isInteger(d.index) || d.index < 0 || d.index >= d.ids.length) return null;
     if(d.mode === 'cbt' && !CBT_MODES[d.cbtMode]) return null;
+    if(d.mode === 'core' && !d.ids.every(id => CORE_ID_RE.test(id))) return null; /* 旧プール(2-H101〜150)のセーブは破棄 */
     const questions = d.ids.map(id => QUESTIONS.find(q => q.id === id));
     if(questions.some(q => !q)) return null;
     const flags = d.mode === 'cbt' && Array.isArray(d.flags) && d.flags.length === d.ids.length ? d.flags.map(f => f === true) : null;
