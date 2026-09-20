@@ -35,8 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **単一ファイル構成が絶対ルール**: HTML/CSS/JS は全て `index.html` 一枚に `<style>`/`<script>` インラインで記述する。別ファイルへの分割(`.css`/`.js`切り出し)はしないこと。
 - **ダークテーマ(ネイビー基調)UIを維持する**: 背景は `--navy-top` / `--navy-deep` / `--navy-bottom` によるグラデーション。新しいUIパーツを追加する場合もこのカラースキームを踏襲すること。
-- **PC向けプレビュー用の「疑似iPhoneフレーム」(`.phone-frame` / `.phone-notch`)は表示用の飾りであり、実機PWA/スマホブラウザでは `@media (max-width:480px)` と `@media (display-mode:standalone)` によって縁取り・ノッチ・ダミーステータスバー(`.status-bar`)を `display:none` にして消す設計になっている。**
-  - 実機で二重表示になる不具合が過去に発生したため、フレーム装飾に新要素を追加する際は必ずこの2つの `@media` ブロックにも非表示化ルールを追記すること。
+- **フルスクリーン・レスポンシブ仕様(本番)**: 疑似iPhoneフレーム(`.phone-frame`/`.phone-notch`)・ダミーステータスバー・プレビュー用キャプション・`#clock`/`initClock()` は撤廃済み。アプリ全体は `.app-shell`(幅100% / 高さ100dvh)に直接描画される。プレビュー用の装飾を再導入しないこと。
 - 画面切り替えは `.screen` / `.screen.active` のクラス付け替え方式(`showScreen(id)`)。SPA的なルーティングライブラリは使わない。
 - SwiftUI設計思想のプロトタイプが `DroneQuizApp/`(Swiftファイル一式: `App/` `Models/` `ViewModels/` `Views/`)に残っている。これはデザイン・データ構造の**参照元**であり、Web版のデプロイ対象には含まれない(GitHub Pagesは `index.html` のみを配信)。UI変更時はこのSwiftUI版との一貫性を意識する。
 
@@ -63,4 +62,3 @@ TestApp/
 - **弱点克服モード用 localStorage キー**: `droneQuizWrongQuestionIds`(定数名 `WRONG_IDS_KEY`)
   - 誤答した設問の `id` を JSON 配列として保存する。次回起動時にこのキーを読み込み、弱点だけを抽出した復習セッションを構成する。
   - localStorage が使用できない環境(プライベートブラウズ等)では例外を握りつぶし、記憶をスキップする設計(`try/catch`)になっているため、この挙動を壊さないこと。
-- 時刻表示などの装飾要素(`#clock`)は `initClock()` が15秒間隔で更新するが、実機では前述の通り非表示化される。
