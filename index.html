@@ -5374,6 +5374,12 @@ function loadCbtHistory(){
 function setCbtMode(mode){
   cbt.mode = mode;
   renderCbtInfo();
+  renderCbtGraph();
+}
+
+/* 履歴1件の種別。mode 付きはそれを採用。旧履歴（modeなし）は回答総数で自動判別（10以下=ミニ、それ以外=本番） */
+function cbtRecordMode(r){
+  return r.mode === 'full' || r.mode === 'mini' ? r.mode : (r.total <= CBT_MODES.mini.count ? 'mini' : 'full');
 }
 
 function renderCbtInfo(){
@@ -5395,18 +5401,21 @@ function renderCbtInfo(){
 function renderCbtGraph(){
   const wrap = document.getElementById('cbtGraph');
   if(!wrap) return;
-  const h = loadCbtHistory().slice(-5);
-  const head = `<div class="cbt-graph-title"><span>成長グラフ（直近${h.length}回）</span>
+  const m = CBT_MODES[cbt.mode];
+  const MAXV = m.count;
+  const h = loadCbtHistory().filter(r => cbtRecordMode(r) === cbt.mode).slice(-5);
+  const head = `<div class="cbt-graph-title"><span>成長グラフ（${m.label}・直近${h.length}回）</span>
     <span class="cbt-legend"><span><i style="background:#38bdf8"></i>総回答数</span><span><i style="background:#33b373"></i>正解数</span></span></div>`;
   if(h.length === 0){
-    wrap.innerHTML = head + '<div class="cbt-empty">まだ試験履歴がありません。</div>';
+    wrap.innerHTML = head + `<div class="cbt-empty">まだ${m.label}の試験履歴がありません。</div>`;
     return;
   }
   const W = 320, H = 210, L = 30, R = 14, T = 22, B = 30, inset = 16;
   const pw = W - L - R, ph = H - T - B;
-  const y = v => T + ph * (1 - Math.min(50, Math.max(0, v)) / 50);
+  const y = v => T + ph * (1 - Math.min(MAXV, Math.max(0, v)) / MAXV);
   const x = i => h.length === 1 ? L + pw/2 : L + inset + i * (pw - 2*inset) / (h.length - 1);
-  const grid = [0,10,20,30,40,50].map(v =>
+  const step = MAXV / 5;
+  const grid = [0,1,2,3,4,5].map(k => k * step).map(v =>
     `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" style="stroke:rgba(var(--w),${v === 0 ? 0.25 : 0.08})"/>` +
     `<text x="${L-6}" y="${y(v)+3}" text-anchor="end" style="font-size:calc(9px * var(--fs));fill:rgba(var(--w),0.4)">${v}</text>`).join('');
   const line = (k, c) => h.length < 2 ? '' :
@@ -5419,7 +5428,8 @@ function renderCbtGraph(){
     return `<text x="${x(i).toFixed(1)}" y="${H-10}" text-anchor="middle" style="font-size:calc(9.5px * var(--fs));fill:rgba(var(--w),0.55)">${+m}/${+d}</text>`;
   }).join('');
   wrap.innerHTML = head + `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="試験回ごとの総回答数と正解数の推移">
-    ${grid}${line('total','#38bdf8')}${line('correct','#33b373')}${dots('total','#38bdf8',-8)}${dots('correct','#33b373',15)}${xl}</svg>`;
+    ${grid}<g id="cbtPassLine" data-pass="${m.pass}"><line x1="${L}" x2="${W-R}" y1="${y(m.pass).toFixed(1)}" y2="${y(m.pass).toFixed(1)}" stroke="#ff9800" stroke-width="1.4" stroke-dasharray="4,4" opacity="0.6"/>` +
+    `<text x="${W-R}" y="${(y(m.pass) - 3).toFixed(1)}" text-anchor="end" fill="#ffb74d" opacity="0.85" style="font-size:calc(8.5px * var(--fs))" font-weight="700">合格ライン (80%)</text></g>${line('total','#38bdf8')}${line('correct','#33b373')}${dots('total','#38bdf8',-8)}${dots('correct','#33b373',15)}${xl}</svg>`;
 }
 
 /* 本番再現の出題内訳。一等のみ「計算・リスク管理」を試験全体の10%（50問→5問、10問→1問）に固定し、
@@ -5614,7 +5624,7 @@ function finishCbt(manual){
     recordAnswer(q.id, ok);
   });
   const history = loadCbtHistory();
-  history.push({ date:ymd(new Date()), total:answered, correct });
+  history.push({ date:ymd(new Date()), total:answered, correct, mode:cbt.mode });
   saveCbtHistory(history);
 
   const total = cbt.questions.length;
