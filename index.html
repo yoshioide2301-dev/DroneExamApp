@@ -903,6 +903,32 @@
   .bc-meta small{ display:block; margin-top:3px; font-size:calc(11.5px * var(--fs)); font-weight:700; line-height:1.4; color:rgba(255,255,255,0.9); }
   .bc-go{ flex:0 0 auto; font-size:22px; }
 
+  /* ---------- second-class ed.5 core bootcamp (mint / fresh green) ---------- */
+  .core-wrap{ margin:16px 20px 24px; }
+  .core-card{
+    padding:14px; border-radius:20px; color:#0b3d2e;
+    background:linear-gradient(135deg,#a8e6cf 0%,#6fe08a 100%);
+    box-shadow:0 10px 24px rgba(111,224,138,0.35), inset 0 1px 0 rgba(255,255,255,0.45);
+  }
+  .core-title{ font-size:calc(14.5px * var(--fs)); font-weight:800; line-height:1.4; }
+  .core-sub{ margin:3px 0 12px; font-size:calc(11.5px * var(--fs)); font-weight:700; line-height:1.45; opacity:0.85; }
+  .core-btn{
+    width:100%; display:flex; align-items:center; gap:8px; padding:13px 14px; margin-top:8px;
+    border:none; border-radius:14px; cursor:pointer; text-align:left; font:inherit;
+    font-size:calc(13.5px * var(--fs)); font-weight:800; line-height:1.4; color:#0b3d2e;
+    background:rgba(255,255,255,0.7); box-shadow:0 2px 8px rgba(11,61,46,0.12);
+  }
+  .core-btn.primary{ background:#0b3d2e; color:#eafff3; }
+  .core-btn:active{ transform:scale(0.98); }
+  .core-btn span:first-child{ flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
+  .mat-cta{ margin:18px 20px 8px; }
+  .core-review-row{ display:flex; justify-content:flex-end; margin-top:4px; }
+  .core-review-btn{
+    padding:6px 12px; border-radius:99px; cursor:pointer; font:inherit;
+    font-size:calc(11.5px * var(--fs)); font-weight:800; color:#0b3d2e;
+    background:#a8e6cf; border:1px solid #6fe08a;
+  }
+
 </style>
 </head>
 <body>
@@ -962,12 +988,14 @@
           </div>
           <div class="chapter-list" id="chapterList"></div>
           <div class="bootcamp-wrap" id="bootcampWrap"></div>
+          <div class="core-wrap" id="coreWrap"></div>
           </div>
 
           <div class="pane" id="materialsPane">
             <div class="mat-title">無人航空機操縦士教則 第5版 変更点5選<small>2026年7月14日適用</small></div>
             <div class="mat-head" id="matHead"></div>
             <div class="acc-list" id="accList"></div>
+            <div class="mat-cta" id="matCta"></div>
             <div class="mat-debug">
               <button onclick="forceRevision('6.0')">【テスト用】自律リサーチ（教則第6版）検知を擬似発火</button>
               <button onclick="resetKisokuVersion()">【開発者用デバッグ】第5版の状態に戻す</button>
@@ -1007,6 +1035,7 @@
           </div>
 
           <div class="quiz-body" id="quizBody">
+            <div class="core-review-row" id="coreReviewRow" style="display:none"><button type="button" class="core-review-btn" onclick="openMaterialsFromCore()">📖 変更点5点の資料で復習</button></div>
             <div class="qwrap" id="qWrap"><div class="q-dots" id="qDots" role="img" aria-label="過去の解答履歴"></div><div class="question-text" id="questionText"></div></div>
             <div class="choice-list" id="choiceList"></div>
             <div id="explanationSlot"></div>
@@ -8034,7 +8063,7 @@ function setTab(tab){
     document.getElementById(t + 'Pane').classList.toggle('active', t === tab);
     document.getElementById('tab' + ids[t]).classList.toggle('active', t === tab);
   });
-  if(tab === 'materials') checkRemoteRevision();
+  if(tab === 'materials'){ checkRemoteRevision(); renderMatCta(); }
   if(tab === 'cbt'){ renderCbtInfo(); renderCbtGraph(); }
 }
 
@@ -8597,6 +8626,86 @@ function startBootcamp(){
   renderQuestion();
 }
 
+/* =========================================================
+   二等「教則第5版・最新改訂コア特訓」（2-H101〜2-H150 の50問）
+   誤答履歴のある問題を先頭に、残りはランダム順。正誤判定・誤答履歴・履歴ドット・再開セーブは既存処理を流用。
+   学習資料（変更点5選）との相互ショートカットあり。
+   ========================================================= */
+const CORE_ID_RE = /^2-H1(0[1-9]|[1-4]\d|50)$/;
+let coreInProgress = false;
+
+function corePool(){
+  return QUESTIONS.filter(q => q.licenses.includes('second') && CORE_ID_RE.test(q.id));
+}
+
+function renderCore(){
+  const wrap = document.getElementById('coreWrap');
+  if(!wrap) return;
+  if(state.license !== 'second'){ wrap.innerHTML = ''; return; }
+  const n = corePool().length;
+  const ids = new Set(loadWrongIds('second'));
+  const weak = corePool().filter(q => ids.has(q.id)).length;
+  wrap.innerHTML = `
+    <div class="core-card">
+      <div class="core-title">🌿 教則第5版・最新改訂コア特訓（ブートキャンプ）</div>
+      <div class="core-sub">最新改訂の核心 全${n}問を集中周回${weak > 0 ? ` ／ 🔥 苦手${weak}問を先頭に出題` : ''}</div>
+      <button type="button" class="core-btn primary" onclick="startCore()"><span>💥 最新コア特訓（全${n}問）をスタート</span><span>⚡️</span></button>
+      <button type="button" class="core-btn" onclick="openMaterialsTab()"><span>📄 教則第5版 変更点5点の徹底解説（学習資料）</span><span>›</span></button>
+    </div>`;
+}
+
+function startCore(){
+  if(state.license !== 'second') return;
+  const pool = corePool();
+  if(pool.length === 0){ showToast('コア特訓の問題がありません。'); return; }
+  const wrongIds = new Set(loadWrongIds('second'));
+  state.mode = 'core';
+  state.chapter = null;
+  state.sessionQuestions = shuffle(pool.filter(q => wrongIds.has(q.id))).concat(shuffle(pool.filter(q => !wrongIds.has(q.id))));
+  state.currentIndex = 0;
+  state.correctCount = 0;
+  state.selectedIndex = null;
+  state.isRevealed = false;
+  coreInProgress = true;
+  document.getElementById('quizChapterTitle').textContent = `💥 教則第5版 最新コア特訓（全${pool.length}問）`;
+  showScreen('quizScreen');
+  renderQuestion();
+}
+
+function coreResumable(){ return coreInProgress && state.mode === 'core' && state.sessionQuestions.length > 0; }
+
+/* 学習資料タブを開く（練習画面→資料） */
+function openMaterialsTab(){
+  showScreen('menuScreen');
+  setTab('materials');
+  window.scrollTo(0, 0);
+}
+
+/* 特訓の出題画面 → 学習資料。進捗（出題順・問題番号・再開セーブ）は保持したまま資料を開く */
+function openMaterialsFromCore(){
+  saveResumeState();
+  openMaterialsTab();
+}
+
+/* 学習資料の下部バナー（二等のみ）。進行中の特訓があれば「続きから」を併記 */
+function renderMatCta(){
+  const wrap = document.getElementById('matCta');
+  if(!wrap) return;
+  if(state.license !== 'second'){ wrap.innerHTML = ''; return; }
+  const n = corePool().length;
+  wrap.innerHTML = `<div class="core-card">
+    <div class="core-title">🌿 インプットの直後はアウトプット！</div>
+    <div class="core-sub">読んだ変更点を、最新改訂の問題で確認しましょう</div>
+    ${coreResumable() ? `<button type="button" class="core-btn primary" onclick="returnToCore()"><span>▶ 特訓の続き（${state.currentIndex + 1} / ${state.sessionQuestions.length} 問目）に戻る</span><span>⚡️</span></button>` : ''}
+    <button type="button" class="core-btn${coreResumable() ? '' : ' primary'}" onclick="startCore()"><span>🔥 知識の定着を確認！最新コア特訓（${n}問）に挑戦する</span><span>⚡️</span></button>
+  </div>`;
+}
+
+function returnToCore(){
+  if(!coreResumable()){ startCore(); return; }
+  showScreen('quizScreen');
+}
+
 function shuffle(arr){
   const a = arr.slice();
   for(let i=a.length-1;i>0;i--){
@@ -8622,6 +8731,8 @@ function setLicense(license){
     (license==='first' ? '一等' : '二等') + '資格の出題範囲を、教則の章ごとに演習できます。';
   renderChapterList();
   renderBootcamp();
+  renderCore();
+  renderMatCta();
   renderWeakPointCard();
   renderProgressGauge();
 }
@@ -8687,6 +8798,7 @@ function renderQuestion(){
   const total = state.sessionQuestions.length;
 
   updateRemainBadge();
+  document.getElementById('coreReviewRow').style.display = state.mode === 'core' ? 'flex' : 'none';
   saveResumeState();
   if(state.mode === 'daily'){
     document.getElementById('quizChapterTitle').textContent = `今日のおすすめ問題（${state.currentIndex+1} / ${total}）`;
@@ -8779,6 +8891,7 @@ function nextQuestion(){
    ========================================================= */
 function showResult(){
   clearResumeState();
+  if(state.mode === 'core') coreInProgress = false;
   const total = state.sessionQuestions.length;
   const accuracy = total>0 ? state.correctCount/total : 0;
   const great = accuracy >= 0.8;
@@ -8789,6 +8902,7 @@ function showResult(){
   titleEl.textContent =
     chapterDone ? '🎉 対策完了！' :
     state.mode === 'bootcamp' ? '🔥 一等計算特訓 完了' :
+    state.mode === 'core' ? '💥 教則第5版 最新コア特訓 完了' :
     state.mode === 'chapterWrong' ? `第${state.chapter.id}章 間違えた問題のみ 完了` :
     state.mode === 'daily' ? '本日の学習完了！' :
     state.mode === 'weak' ? '弱点克服モード 完了' : `第${state.chapter.id}章 完了`;
@@ -8810,6 +8924,8 @@ function retryChapter(){
     startDailyMode();
   } else if(state.mode === 'bootcamp'){
     startBootcamp();
+  } else if(state.mode === 'core'){
+    startCore();
   } else if(state.mode === 'chapterWrong'){
     if(wrongQuestionsFor(state.chapter.id, state.license).length === 0){
       backToMenu();
@@ -8841,6 +8957,7 @@ function backToMenu(){
   showScreen('menuScreen');
   renderChapterList();
   renderBootcamp();
+  renderCore();
   renderCountdown();
   renderWeakPointCard();
   renderProgressGauge();
@@ -8853,7 +8970,7 @@ function backToMenu(){
    出題中に自動セーブ。結果表示・CBT終了/中断でクリア。次回起動時に有効なら再開ポップアップを表示。
    ========================================================= */
 const RESUME_KEY = "drone_exam_resume_state";
-const RESUME_MODES = { chapter:'章別学習', chapterWrong:'章別（間違えた問題のみ）', bootcamp:'一等計算特訓', weak:'弱点克服モード', daily:'今日のおすすめ', cbt:'CBT模擬試験' };
+const RESUME_MODES = { chapter:'章別学習', chapterWrong:'章別（間違えた問題のみ）', bootcamp:'一等計算特訓', core:'二等最新コア特訓', weak:'弱点克服モード', daily:'今日のおすすめ', cbt:'CBT模擬試験' };
 
 function saveResumeState(){
   const isCbt = document.getElementById('cbtScreen').classList.contains('active');
@@ -8909,6 +9026,7 @@ function applyResume(){
   }
   const chapter = CHAPTERS.find(c => c.id === questions[0].chapterID) || null;
   state.mode = d.mode;
+  coreInProgress = d.mode === 'core';
   state.chapter = (d.mode === 'chapter' || d.mode === 'chapterWrong') ? chapter : null;
   state.sessionQuestions = questions;
   state.currentIndex = d.index;
@@ -8919,6 +9037,7 @@ function applyResume(){
     chapter: chapter ? `第${chapter.id}章` : '',
     chapterWrong: chapter ? `第${chapter.id}章（間違えた問題のみ）` : '',
     bootcamp: `🔥 一等計算特訓ブートキャンプ（全${questions.length}問）`,
+    core: `💥 教則第5版 最新コア特訓（全${questions.length}問）`,
     weak: '弱点克服モード',
     daily: '',
   };
@@ -8941,6 +9060,7 @@ checkRemoteRevision();
 renderCbtInfo();
 renderCbtGraph();
 renderBootcamp();
+renderCore();
 syncDisplayUI();
 renderSyncStatus();
 renderUpdateBadge();
