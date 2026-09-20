@@ -374,6 +374,13 @@
     padding:16px 20px 130px;
   }
 
+  /* 問題ごとの直近3回の勝敗ドット（左=古い → 右=新しい） */
+  .qwrap{ position:relative; }
+  .qwrap.has-dots .question-text{ padding-right:34px; }
+  .q-dots{ position:absolute; top:12px; right:2px; display:flex; gap:4px; pointer-events:none; }
+  .q-dots i{ display:block; width:6px; height:6px; border-radius:50%; }
+  .q-dots i.ok{ background:#6fe08a; }
+  .q-dots i.ng{ background:#ffb454; }
   .question-text{
     font-size:calc(18px * var(--fs));
     font-weight:700;
@@ -1000,7 +1007,7 @@
           </div>
 
           <div class="quiz-body" id="quizBody">
-            <div class="question-text" id="questionText"></div>
+            <div class="qwrap" id="qWrap"><div class="q-dots" id="qDots" role="img" aria-label="過去の解答履歴"></div><div class="question-text" id="questionText"></div></div>
             <div class="choice-list" id="choiceList"></div>
             <div id="explanationSlot"></div>
           </div>
@@ -1035,7 +1042,7 @@
             <div class="cbt-num" id="cbtNum">1 / 50</div>
           </div>
           <div class="quiz-body cbt-body">
-            <div class="question-text" id="cbtQuestionText"></div>
+            <div class="qwrap" id="cbtQWrap"><div class="q-dots" id="cbtQDots" role="img" aria-label="過去の解答履歴"></div><div class="question-text" id="cbtQuestionText"></div></div>
             <div class="choice-list" id="cbtChoiceList"></div>
             <div class="cbt-nav">
               <button class="secondary-btn" id="cbtPrev" onclick="moveCbt(-1)">前の問題</button>
@@ -5896,7 +5903,39 @@ function renderProgressGauge(){
   }));
 }
 
+/* ---------- 問題ごとの直近3回の勝敗履歴（LocalStorage: drone_question_dots = {問題ID:[1|0,...最大3件, 古い→新しい]}） ---------- */
+const DOTS_KEY = "drone_question_dots";
+const DOTS_MAX = 3;
+
+function loadDots(){
+  try{
+    const o = JSON.parse(lsGet(DOTS_KEY));
+    if(!o || typeof o !== 'object' || Array.isArray(o)) return {};
+    const out = {};
+    Object.keys(o).forEach(k => {
+      if(Array.isArray(o[k])){
+        const a = o[k].filter(v => v === 0 || v === 1).slice(-DOTS_MAX);
+        if(a.length) out[k] = a;
+      }
+    });
+    return out;
+  }catch(e){ return {}; }
+}
+
+function pushDot(questionId, isCorrect){
+  const all = loadDots();
+  all[questionId] = (all[questionId] || []).concat(isCorrect ? 1 : 0).slice(-DOTS_MAX);
+  lsSet(DOTS_KEY, JSON.stringify(all));
+}
+
+function renderDots(dotsId, wrapId, questionId){
+  const h = loadDots()[questionId] || [];
+  document.getElementById(dotsId).innerHTML = h.map(v => `<i class="${v ? 'ok' : 'ng'}"></i>`).join('');
+  document.getElementById(wrapId).classList.toggle('has-dots', h.length > 0);
+}
+
 function recordAnswer(questionId, isCorrect){
+  pushDot(questionId, isCorrect);
   const license = state.license;
   const ids = loadWrongIds(license);
   const idx = ids.indexOf(questionId);
@@ -6650,6 +6689,7 @@ function renderCbtQuestion(){
   const total = cbt.questions.length;
   document.getElementById('cbtNum').textContent = `${cbt.index+1} / ${total}`;
   document.getElementById('cbtQuestionText').textContent = q.question;
+  renderDots('cbtQDots', 'cbtQWrap', q.id);
   const list = document.getElementById('cbtChoiceList');
   list.innerHTML = '';
   q.choices.forEach((text, idx) => {
@@ -7030,6 +7070,7 @@ function renderQuestion(){
   document.getElementById('quizCategoryLabel').textContent = q.category;
   document.getElementById('progressFill').style.width = `${(state.currentIndex/total)*100}%`;
   document.getElementById('questionText').textContent = q.question;
+  renderDots('qDots', 'qWrap', q.id);
 
   const choiceList = document.getElementById('choiceList');
   choiceList.innerHTML = '';
@@ -7056,6 +7097,7 @@ function selectChoice(idx){
   const isCorrect = idx === q.correct;
   if(isCorrect) state.correctCount++;
   recordAnswer(q.id, isCorrect);
+  renderDots('qDots', 'qWrap', q.id);
   updateRemainBadge();
 
   const rows = document.querySelectorAll('#choiceList .choice-row');
