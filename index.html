@@ -794,6 +794,42 @@
     border:1px solid rgba(230,83,77,0.5); box-shadow:0 20px 50px rgba(0,0,0,0.5);
   }
   .cbt-modal-card p{ margin:0 0 18px; font-size:calc(17px * var(--fs)); font-weight:800; color:var(--failure); line-height:1.5; }
+  /* 前回の続きから再開ポップアップ */
+  .resume-modal{
+    position:absolute; inset:0; z-index:90; display:none;
+    align-items:center; justify-content:center; padding:20px;
+    background:rgba(0,10,22,0.78);
+  }
+  .resume-modal.show{ display:flex; animation:fadeIn .35s ease both; }
+  .resume-card{
+    position:relative; width:100%; max-width:360px; padding:28px 18px 18px; border-radius:22px; text-align:center;
+    background:linear-gradient(180deg, var(--navy-top) 0%, var(--navy-deep) 100%);
+    border:1px solid rgba(255,159,28,0.45); box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    animation:fadeIn .45s ease both;
+  }
+  .resume-x{
+    position:absolute; top:8px; right:8px; width:36px; height:36px; border:0; border-radius:50%;
+    background:transparent; color:var(--text-secondary); font-size:22px; line-height:1; cursor:pointer;
+  }
+  .resume-icon{
+    width:64px; height:64px; margin:0 auto 14px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:32px; background:linear-gradient(135deg,#ffb347,#ff7a00); box-shadow:0 8px 22px rgba(255,122,0,0.4);
+  }
+  .resume-title{ margin:0 0 8px; font-size:calc(19px * var(--fs)); font-weight:800; color:var(--fg); }
+  .resume-desc{ margin:0 0 12px; font-size:calc(13px * var(--fs)); line-height:1.6; color:var(--text-secondary); }
+  .resume-info{
+    margin:0 0 16px; padding:10px 12px; border-radius:12px; font-size:calc(13px * var(--fs)); font-weight:800; line-height:1.6;
+    color:var(--gold); background:var(--card-bg); border:1px solid var(--card-border); overflow-wrap:anywhere;
+  }
+  .resume-go{
+    width:100%; padding:15px 12px; border:0; border-radius:99px; cursor:pointer;
+    font:inherit; font-size:calc(16px * var(--fs)); font-weight:800; color:#fff;
+    background:linear-gradient(90deg,#ffb347 0%,#ff7a00 100%); box-shadow:0 8px 20px rgba(255,122,0,0.35);
+  }
+  .resume-skip{
+    margin-top:12px; padding:6px; border:0; background:none; cursor:pointer;
+    font:inherit; font-size:calc(12px * var(--fs)); color:var(--text-secondary); text-decoration:underline;
+  }
   .cbt-badge{
     display:inline-block; padding:10px 26px; border-radius:99px; font-size:calc(18px * var(--fs)); font-weight:800;
   }
@@ -1194,6 +1230,18 @@
 
         <div class="sheet-label">アプリについて</div>
         <div class="about">© Zero Gravity Films<br>バージョン <span id="aboutVer">1.1.0</span></div>
+      </div>
+
+      <div class="resume-modal" id="resumeModal" onclick="if(event.target===this)discardResume()">
+        <div class="resume-card" role="dialog" aria-modal="true" aria-labelledby="resumeTitle">
+          <button type="button" class="resume-x" onclick="discardResume()" aria-label="閉じる">×</button>
+          <div class="resume-icon" aria-hidden="true">🕒</div>
+          <h3 class="resume-title" id="resumeTitle">前回の続きがあります</h3>
+          <p class="resume-desc">前回の設定があります。<br>前回と同じ設定でトレーニング（学習）できます。内容をご確認ください</p>
+          <div class="resume-info" id="resumeInfo"></div>
+          <button type="button" class="resume-go" onclick="applyResume()">再開する</button>
+          <button type="button" class="resume-skip" onclick="discardResume()">最初から解く</button>
+        </div>
       </div>
 
       <div class="cbt-modal" id="cbtTimeoutModal">
@@ -5398,10 +5446,14 @@ function fmtTime(sec){
 }
 
 function startCbt(){
+  beginCbtSession(buildCbtQuestions(CBT_MODES[cbt.mode].count), 0);
+}
+
+function beginCbtSession(questions, index){
   const m = CBT_MODES[cbt.mode];
-  cbt.questions = buildCbtQuestions(m.count);
+  cbt.questions = questions;
   cbt.answers = new Array(cbt.questions.length).fill(null);
-  cbt.index = 0;
+  cbt.index = index;
   cbt.locked = false;
   cbt.endAt = Date.now() + m.seconds * 1000;
   document.getElementById('cbtScreen').classList.remove('cbt-locked');
@@ -5446,6 +5498,7 @@ function renderCbtQuestion(){
     row.innerHTML = `<div class="choice-badge">${CHOICE_LABELS[idx] || '?'}</div><div class="choice-text">${text}</div>`;
     list.appendChild(row);
   });
+  saveResumeState();
   document.getElementById('cbtPrev').disabled = cbt.index === 0;
   document.getElementById('cbtNext').disabled = cbt.index === total - 1;
   document.getElementById('cbtJump').innerHTML = cbt.questions.map((_, i) =>
@@ -5472,6 +5525,7 @@ function abortCbt(){
   if(cbt.locked) return;
   if(!confirm('試験を中断しますか？この試験の記録は残りません。')) return;
   clearInterval(cbt.timer);
+  clearResumeState();
   backToMenu();
   setTab('cbt');
 }
@@ -5484,6 +5538,7 @@ function finishCbt(manual){
   }
   clearInterval(cbt.timer);
   cbt.locked = true;
+  clearResumeState();
 
   const m = CBT_MODES[cbt.mode];
   let answered = 0, correct = 0;
@@ -5758,6 +5813,7 @@ function renderQuestion(){
   const total = state.sessionQuestions.length;
 
   updateRemainBadge();
+  saveResumeState();
   if(state.mode === 'daily'){
     document.getElementById('quizChapterTitle').textContent = `今日のおすすめ問題（${state.currentIndex+1} / ${total}）`;
   }
@@ -5846,6 +5902,7 @@ function nextQuestion(){
    RENDER: RESULT SCREEN
    ========================================================= */
 function showResult(){
+  clearResumeState();
   const total = state.sessionQuestions.length;
   const accuracy = total>0 ? state.correctCount/total : 0;
   const great = accuracy >= 0.8;
@@ -5914,6 +5971,86 @@ function backToMenu(){
 }
 
 /* =========================================================
+   前回の続きから再開（完全ローカル / 外部通信なし）
+   LocalStorage: drone_exam_resume_state
+     { mode, license, index, ids:[問題ID...], cbtMode? }
+   出題中に自動セーブ。結果表示・CBT終了/中断でクリア。次回起動時に有効なら再開ポップアップを表示。
+   ========================================================= */
+const RESUME_KEY = "drone_exam_resume_state";
+const RESUME_MODES = { chapter:'章別学習', chapterWrong:'章別（間違えた問題のみ）', bootcamp:'一等計算特訓', weak:'弱点克服モード', daily:'今日のおすすめ', cbt:'CBT模擬試験' };
+
+function saveResumeState(){
+  const isCbt = document.getElementById('cbtScreen').classList.contains('active');
+  const qs = isCbt ? cbt.questions : state.sessionQuestions;
+  if(!qs.length) return;
+  const data = { mode: isCbt ? 'cbt' : state.mode, license: state.license, index: isCbt ? cbt.index : state.currentIndex, ids: qs.map(q => q.id) };
+  if(isCbt) data.cbtMode = cbt.mode;
+  lsSet(RESUME_KEY, JSON.stringify(data));
+}
+
+function clearResumeState(){
+  try{ localStorage.removeItem(RESUME_KEY); }catch(e){ /* 保存不可環境ではスキップ */ }
+}
+
+function loadResumeState(){
+  try{
+    const d = JSON.parse(lsGet(RESUME_KEY));
+    if(!d || !RESUME_MODES[d.mode] || (d.license !== 'first' && d.license !== 'second')) return null;
+    if(!Array.isArray(d.ids) || d.ids.length === 0 || !Number.isInteger(d.index) || d.index < 0 || d.index >= d.ids.length) return null;
+    if(d.mode === 'cbt' && !CBT_MODES[d.cbtMode]) return null;
+    const questions = d.ids.map(id => QUESTIONS.find(q => q.id === id));
+    if(questions.some(q => !q)) return null;
+    return { d, questions };
+  }catch(e){ return null; }
+}
+
+function showResumePrompt(){
+  const r = loadResumeState();
+  if(!r){ clearResumeState(); return; }
+  const { d } = r;
+  document.getElementById('resumeInfo').textContent =
+    `${d.license === 'first' ? '一等' : '二等'} ／ ${RESUME_MODES[d.mode]} ／ ${d.index + 1} / ${d.ids.length} 問目から`;
+  document.getElementById('resumeModal').classList.add('show');
+}
+
+function discardResume(){
+  clearResumeState();
+  document.getElementById('resumeModal').classList.remove('show');
+}
+
+function applyResume(){
+  const r = loadResumeState();
+  document.getElementById('resumeModal').classList.remove('show');
+  if(!r){ clearResumeState(); return; }
+  const { d, questions } = r;
+  setLicense(d.license);
+  if(d.mode === 'cbt'){
+    cbt.mode = d.cbtMode;
+    document.getElementById('cbtScreen').classList.remove('cbt-locked');
+    beginCbtSession(questions, d.index);
+    return;
+  }
+  const chapter = CHAPTERS.find(c => c.id === questions[0].chapterID) || null;
+  state.mode = d.mode;
+  state.chapter = (d.mode === 'chapter' || d.mode === 'chapterWrong') ? chapter : null;
+  state.sessionQuestions = questions;
+  state.currentIndex = d.index;
+  state.correctCount = 0;
+  state.selectedIndex = null;
+  state.isRevealed = false;
+  const titles = {
+    chapter: chapter ? `第${chapter.id}章` : '',
+    chapterWrong: chapter ? `第${chapter.id}章（間違えた問題のみ）` : '',
+    bootcamp: `🔥 一等計算特訓ブートキャンプ（全${questions.length}問）`,
+    weak: '弱点克服モード',
+    daily: '',
+  };
+  document.getElementById('quizChapterTitle').textContent = titles[d.mode];
+  showScreen('quizScreen');
+  renderQuestion();
+}
+
+/* =========================================================
    INIT
    ========================================================= */
 function initClock(){
@@ -5943,6 +6080,7 @@ renderSyncStatus();
 renderUpdateBadge();
 document.getElementById('aboutVer').textContent = APP_VERSION;
 initClock();
+showResumePrompt();
 </script>
 
 </body>
