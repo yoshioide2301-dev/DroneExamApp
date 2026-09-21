@@ -1199,7 +1199,7 @@
         <p class="sheet-note">アプリのバージョン・端末情報（OS情報）・日時が、この端末内にのみ保存されます。外部へは送信されません。</p>
         <div class="sheet-actions">
           <button class="secondary-btn" onclick="closeReport()">キャンセル</button>
-          <button class="primary-btn" onclick="submitReport()">送信する</button>
+          <button class="primary-btn" onclick="submitReport()">保存する</button>
         </div>
       </div>
     </div>
@@ -8065,19 +8065,17 @@ function setTab(tab){
     document.getElementById(t + 'Pane').classList.toggle('active', t === tab);
     document.getElementById('tab' + ids[t]).classList.toggle('active', t === tab);
   });
-  if(tab === 'materials'){ checkRemoteRevision(); renderMatCta(); }
+  if(tab === 'materials'){ renderMatCta(); }
   if(tab === 'cbt'){ renderCbtInfo(); renderCbtGraph(); }
 }
 
 /* =========================================================
    自律リサーチ・法改正アップデート（擬似ロジック）
    LocalStorage: droneKisokuVersion（適用済み教則版数, 既定 "5.0"）
-   REMOTE_REVISION_URL に {"version":"6.0"} を返すJSONのURLを設定すると実チェックに切替
-   （空の間は検知なし。強制発火ボタンで動作をシミュレーション）
+   （外部通信なし。強制発火ボタンで動作をシミュレーション）
    ========================================================= */
 const KISOKU_VERSION_KEY = "droneKisokuVersion";
 const KISOKU_BASE_VERSION = "5.0";
-const REMOTE_REVISION_URL = "";
 let pendingRevision = null;
 
 function loadKisokuVersion(){
@@ -8104,20 +8102,6 @@ function renderKisokuVersion(){
   if(head) head.innerHTML = `適用中の教則： <b>${kisokuLabel(v)}</b>`;
   const b = document.getElementById('kisokuBannerText');
   if(b) b.textContent = v === KISOKU_BASE_VERSION ? '国土交通省 教則第5版 準拠' : kisokuLabel(v);
-}
-
-async function fetchRemoteRevision(){
-  if(!REMOTE_REVISION_URL) return null;
-  try{
-    const res = await fetch(REMOTE_REVISION_URL, { cache:"no-store" });
-    const j = await res.json();
-    return /^\d+(\.\d+)?$/.test(j && j.version) ? j.version : null;
-  }catch(e){ return null; }
-}
-
-async function checkRemoteRevision(){
-  const remote = await fetchRemoteRevision();
-  if(remote && parseFloat(remote) > parseFloat(loadKisokuVersion())) showUpdateBanner(remote);
 }
 
 function showUpdateBanner(version){
@@ -9059,7 +9043,6 @@ renderProgressGauge();
 renderCountdown();
 renderAmendments();
 renderKisokuVersion();
-checkRemoteRevision();
 renderCbtInfo();
 renderCbtGraph();
 renderBootcamp();
