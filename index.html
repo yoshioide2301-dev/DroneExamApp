@@ -326,6 +326,7 @@
     flex:0 0 auto;
     display:flex; align-items:center; gap:10px;
     padding:6px 14px;
+    position:sticky; top:0; z-index:6; background:var(--navy-top);
   }
   .back-btn{
     width:32px; height:32px;
@@ -338,8 +339,15 @@
   }
   .back-btn svg{ width:16px; height:16px; }
   .quiz-topbar .title{
+    flex:1 1 auto; min-width:0; text-align:center;
     font-size:calc(14.5px * var(--fs)); font-weight:700;
   }
+  .nav-arrow{
+    flex:0 0 auto; width:38px; height:32px; border-radius:10px;
+    border:1px solid var(--card-border); background:rgba(var(--w),0.07); color:var(--fg);
+    font-size:calc(18px * var(--fs)); font-weight:800; line-height:1; font-family:inherit; cursor:pointer;
+  }
+  .nav-arrow:disabled{ opacity:0.3; cursor:default; }
 
   .quiz-progress-wrap{
     padding:6px 20px 0;
@@ -371,7 +379,7 @@
 
   .quiz-body{
     flex:1 1 auto;
-    padding:16px 20px 130px;
+    padding:16px 20px 24px;
   }
 
   /* 問題ごとの直近3回の勝敗ドット（左=古い → 右=新しい） */
@@ -466,9 +474,8 @@
   .explanation-ref svg{ width:12px; height:12px; }
 
   .quiz-bottom-bar{
-    position:absolute;
-    left:0; right:0; bottom:0;
-    padding:14px 20px 22px;
+    position:sticky; bottom:0; z-index:5; flex:0 0 auto;
+    padding:14px 20px calc(22px + env(safe-area-inset-bottom, 0px));
     background:linear-gradient(180deg, rgba(var(--bg-rgb),0) 0%, var(--navy-bottom) 45%);
     display:none;
   }
@@ -684,6 +691,7 @@
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:8px 16px; background:var(--navy-top); border-bottom:1px solid var(--card-border);
   }
+  .cbt-timer-bar .cbt-timer{ margin:0 auto; }
   .cbt-timer{ font-size:calc(30px * var(--fs)); font-weight:800; letter-spacing:1px; font-variant-numeric:tabular-nums; color:var(--fg); }
   .cbt-timer.warn{ color:var(--failure); animation:cbtBlink 1s steps(2,start) infinite; }
   @keyframes cbtBlink{ 50%{ opacity:0.25; } }
@@ -1016,11 +1024,13 @@
         <!-- ============ QUIZ SCREEN ============ -->
         <section class="screen" id="quizScreen" style="position:relative;">
           <div class="quiz-topbar">
-            <button class="back-btn" onclick="backToMenu()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            <button class="back-btn" onclick="backToMenu()" aria-label="メニューへ戻る">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
+            <button class="nav-arrow" id="quizPrevBtn" onclick="prevQuestion()" aria-label="前の問題">＜</button>
             <div class="title" id="quizChapterTitle">第1章</div>
             <span class="remain-badge" id="quizRemainBadge"></span>
+            <button class="nav-arrow" id="quizSkipBtn" onclick="skipQuestion()" aria-label="後回しにして次の問題へ">＞</button>
           </div>
 
           <div class="quiz-progress-wrap">
@@ -1067,8 +1077,10 @@
             <button class="back-btn" onclick="abortCbt()" aria-label="中断">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
             </button>
+            <button class="nav-arrow" id="cbtHdrPrev" onclick="moveCbt(-1)" aria-label="前の問題">＜</button>
             <div class="cbt-timer" id="cbtTimer">30:00</div>
             <div class="cbt-num" id="cbtNum">1 / 50</div>
+            <button class="nav-arrow" id="cbtHdrNext" onclick="moveCbt(1)" aria-label="後回しにして次の問題へ">＞</button>
           </div>
           <div class="quiz-body cbt-body">
             <div class="qwrap" id="cbtQWrap"><div class="q-dots" id="cbtQDots" role="img" aria-label="過去の解答履歴"></div><div class="question-text" id="cbtQuestionText"></div></div>
@@ -7588,6 +7600,12 @@ function renderDots(dotsId, wrapId, questionId){
   document.getElementById(wrapId).classList.toggle('has-dots', h.length > 0);
 }
 
+function popDot(questionId){
+  const all = loadDots();
+  if(all[questionId]) all[questionId].pop();
+  lsSet(DOTS_KEY, JSON.stringify(all));
+}
+
 function recordAnswer(questionId, isCorrect){
   pushDot(questionId, isCorrect);
   const license = state.license;
@@ -8346,6 +8364,8 @@ function renderCbtQuestion(){
     document.getElementById('cbtPrev').disabled = cbtFlagStep(-1) < 0;
     document.getElementById('cbtNext').disabled = cbtFlagStep(1) < 0;
   }
+  document.getElementById('cbtHdrPrev').disabled = document.getElementById('cbtPrev').disabled;
+  document.getElementById('cbtHdrNext').disabled = document.getElementById('cbtNext').disabled;
   const flagOn = !!cbt.flags[cbt.index];
   const fb = document.getElementById('cbtFlagBtn');
   fb.classList.toggle('on', flagOn);
@@ -8779,9 +8799,53 @@ function currentQuestion(){
   return state.sessionQuestions[state.currentIndex];
 }
 
+/* 出題セッション単位の回答記録（sessionQuestions の配列が差し替わるたびに初期化）
+   answers[i]: 未回答 null / 回答済み 選択肢番号。skipped: 「＞」で後回しにした問題の番号集合 */
+function ensureSession(){
+  if(state.answersFor !== state.sessionQuestions){
+    state.answersFor = state.sessionQuestions;
+    state.answers = new Array(state.sessionQuestions.length).fill(null);
+    state.skipped = new Set();
+  }
+}
+
+function gotoQuestion(i){
+  state.currentIndex = i;
+  state.selectedIndex = null;
+  state.isRevealed = false;
+  renderQuestion();
+  document.querySelector('.app-content').scrollTop = 0;
+}
+
+function prevQuestion(){
+  if(state.currentIndex > 0) gotoQuestion(state.currentIndex - 1);
+}
+
+/* 後回し未回答の問題のうち、現在位置以外で最初のもの（無ければ -1） */
+function firstPendingIndex(){
+  ensureSession();
+  for(const i of Array.from(state.skipped).sort((a, b) => a - b)){
+    if(state.answers[i] === null && i !== state.currentIndex) return i;
+  }
+  return -1;
+}
+
+function skipQuestion(){
+  ensureSession();
+  const i = state.currentIndex;
+  if(state.answers[i] === null) state.skipped.add(i);
+  if(i < state.sessionQuestions.length - 1){ gotoQuestion(i + 1); return; }
+  const p = firstPendingIndex();
+  if(p >= 0){ showToast('後回しにした問題へ戻ります。'); gotoQuestion(p); }
+  else renderQuestion();
+}
+
 function renderQuestion(){
+  ensureSession();
   const q = currentQuestion();
   const total = state.sessionQuestions.length;
+  document.getElementById('quizPrevBtn').disabled = state.currentIndex === 0;
+  document.getElementById('quizSkipBtn').disabled = total < 2;
 
   updateRemainBadge();
   document.getElementById('coreReviewRow').style.display = state.mode === 'core' ? 'flex' : 'none';
@@ -8801,6 +8865,7 @@ function renderQuestion(){
     const row = document.createElement('div');
     row.className = 'choice-row';
     row.onclick = () => selectChoice(idx);
+    if(state.answers[state.currentIndex] === idx) row.classList.add('sel');
     row.innerHTML = `
       <div class="choice-badge">${CHOICE_LABELS[idx] || '?'}</div>
       <div class="choice-text">${text}</div>
@@ -8814,12 +8879,23 @@ function renderQuestion(){
 
 function selectChoice(idx){
   if(state.isRevealed) return;
+  ensureSession();
   const q = currentQuestion();
+  const prev = state.answers[state.currentIndex];
   state.selectedIndex = idx;
   state.isRevealed = true;
   const isCorrect = idx === q.correct;
-  if(isCorrect) state.correctCount++;
-  recordAnswer(q.id, isCorrect);
+  state.answers[state.currentIndex] = idx;
+  state.skipped.delete(state.currentIndex);
+  if(prev === null){
+    if(isCorrect) state.correctCount++;
+    recordAnswer(q.id, isCorrect);
+  } else if(prev !== idx && (prev === q.correct) !== isCorrect){
+    /* 回答の修正：正誤が変わる場合のみ、正答数と直近の履歴ドットを差し替える */
+    state.correctCount += isCorrect ? 1 : -1;
+    popDot(q.id);
+    recordAnswer(q.id, isCorrect);
+  }
   renderDots('qDots', 'qWrap', q.id);
   updateRemainBadge();
 
@@ -8854,7 +8930,7 @@ function selectChoice(idx){
 
   const total = state.sessionQuestions.length;
   const isLast = state.currentIndex === total - 1;
-  document.getElementById('nextBtn').textContent = isLast ? '結果を見る' : '次の問題へ';
+  document.getElementById('nextBtn').textContent = !isLast ? '次の問題へ' : firstPendingIndex() >= 0 ? '後回しの問題へ' : '結果を見る';
   document.getElementById('quizBottomBar').classList.add('show');
 }
 
@@ -8862,14 +8938,13 @@ function nextQuestion(){
   if(!state.isRevealed) return;
   const total = state.sessionQuestions.length;
   if(state.currentIndex === total - 1){
+    const p = firstPendingIndex();
+    if(p >= 0){ showToast('後回しにした問題へ戻ります。'); gotoQuestion(p); return; }
     document.getElementById('progressFill').style.width = `100%`;
     showResult();
     return;
   }
-  state.currentIndex++;
-  state.selectedIndex = null;
-  state.isRevealed = false;
-  renderQuestion();
+  gotoQuestion(state.currentIndex + 1);
 }
 
 /* =========================================================

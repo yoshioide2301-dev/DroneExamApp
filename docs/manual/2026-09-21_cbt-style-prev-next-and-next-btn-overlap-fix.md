@@ -1,0 +1,24 @@
+# 技術履歴: CBT準拠「＜／＞」ナビゲーション追加 と「次の問題へ」ボタン被りバグ修正
+
+最終更新: 2026-09-21
+
+## 概要
+`index.html` のみ変更。外部ライブラリ・外部通信の追加なし。
+
+## 1. 「次の問題へ」ボタンのUI被り修正
+- 原因: `.quiz-bottom-bar` が `position:absolute; bottom:0`。実際にスクロールするのは `.app-content` のため、設問（長い解説など）によってバーが本文と重なっていた。固定の `padding-bottom:130px` での回避は不確実。
+- 対策: バーを `position:sticky; bottom:0; z-index:5` の通常フロー要素に変更（本文の直下に配置され、長い場合は画面下に追従）。`.quiz-body` の下余白は 24px に縮小。iOSのセーフエリア（`env(safe-area-inset-bottom)`）を加味。
+
+## 2. CBT準拠の「＜」「＞」ボタン
+- 学習画面（`#quizScreen`：章別／コア特訓／弱点／今日のおすすめ等、全モード共通）のヘッダー左右に `＜`（`prevQuestion()`）/ `＞`（`skipQuestion()`）を追加。ホームへ戻るボタンは混同回避のため「×」アイコンに変更。
+- **＜**: 直前の問題へ戻る。回答済みの問題も選択肢を再選択でき、前回の選択は `.sel` 表示。正誤が変わる場合のみ `correctCount` を補正し、履歴ドットの最新1件を `popDot()` で差し替え（重複記録なし）。先頭問題では無効。
+- **＞**: 未回答のまま後回し（`state.skipped` に記録）して次の問題へ。最終問題で押すと後回しの最初の問題へ戻る。
+- 「次の問題へ」ボタン: 最終問題で後回し未回答が残っていれば「後回しの問題へ」に変化し、その問題へ遷移。残りが無ければ「結果を見る」。
+- 状態管理: `state.answers[]`（回答済み選択肢/未回答null）、`state.skipped`（Set）。`ensureSession()` が `sessionQuestions` の差し替え（各モード開始・再開）で自動初期化するため、各 start* 関数の変更は不要。`state.currentIndex` は `gotoQuestion(i)` に一本化し、`saveResumeState()`（`renderQuestion()`内）が常に同期。
+- 試験演習（CBT模擬試験 `#cbtScreen`）: ヘッダーに `＜／＞`（`moveCbt(-1/1)`）を追加。既存の前後ボタンと同じ無効化条件・見直しフィルター・マス目ジャンプと連動。
+
+## 3. 検証
+- `<script>` 全ブロックの構文チェックOK、`<style>` の波括弧バランスOK。
+- モックDOMで12項目PASS（先頭で＜無効／回答→＞後回し→戻って回答修正で正答数補正／最終問題で後回しへ復帰 等）。
+- 外部通信（fetch / XMLHttpRequest / sendBeacon）0件。localStorage キー構成は不変（`drone_exam_resume_state`・履歴ドットの形式も変更なし）。
+- 実ブラウザでの目視確認は未実施（長い解説でのバー被りは CSS 構造上解消したが、実機確認を推奨）。
