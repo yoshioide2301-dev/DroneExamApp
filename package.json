@@ -1,0 +1,31 @@
+{
+  "name": "zeronavi",
+  "version": "1.0.0",
+  "description": "ゼロナビ（ドローン国家資格 学科対策）",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "sync:www": "node sync-www.js",
+    "cap:sync": "node sync-www.js && npx cap sync ios",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoshioide2301-dev/DroneExamApp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/yoshioide2301-dev/DroneExamApp/issues"
+  },
+  "homepage": "https://github.com/yoshioide2301-dev/DroneExamApp#readme",
+  "dependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2"
+  },
+  "private": true
+}
