@@ -1196,7 +1196,7 @@
         <div class="sheet-label">補足（任意・250文字以内）</div>
         <textarea id="reportNote" maxlength="250" oninput="document.getElementById('reportCount').textContent=this.value.length"></textarea>
         <div class="sheet-count"><span id="reportCount">0</span> / 250</div>
-        <p class="sheet-note">アプリのバージョン・端末情報（UAから取得したOS情報）が一緒に送信されます。</p>
+        <p class="sheet-note">アプリのバージョン・端末情報（OS情報）・日時が、この端末内にのみ保存されます。外部へは送信されません。</p>
         <div class="sheet-actions">
           <button class="secondary-btn" onclick="closeReport()">キャンセル</button>
           <button class="primary-btn" onclick="submitReport()">送信する</button>
@@ -7832,21 +7832,14 @@ function startDailyMode(){
 }
 
 /* =========================================================
-   問題・解説の報告 ― ハーフモーダル + Googleフォーム(formResponse)へ送信
-   ※ 下記URL/entry IDを実際のフォームの値に書き換えること。
-      URLに "PLACEHOLDER" が含まれる間は送信せずモック動作(console出力のみ)。
+   問題・解説の報告 ― ハーフモーダル。外部通信は一切行わず、端末内(LocalStorage)にのみ保存する。
+   LocalStorage: zeronavi_bug_reports = [{questionId, target, kinds[], note, device, version, submittedAt(ISO)}, ...]
+   （最新 REPORT_MAX 件を保持。保存不可環境ではトーストで通知）
    ========================================================= */
 const APP_VERSION = "1.1.0";
+const REPORT_KEY = "zeronavi_bug_reports";
+const REPORT_MAX = 200;
 let reportQid = "";
-const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/PLACEHOLDER_FORM_ID/formResponse";
-const FEEDBACK_ENTRY = {
-  questionId: "entry.0000000001",
-  target:     "entry.0000000002",
-  kinds:      "entry.0000000003",
-  note:       "entry.0000000004",
-  device:     "entry.0000000005",
-  version:    "entry.0000000006",
-};
 
 function getOSInfo(){
   const ua = navigator.userAgent || "";
@@ -7880,26 +7873,35 @@ document.getElementById('reportTarget').addEventListener('click', e => {
   document.querySelectorAll('#reportTarget button').forEach(b => b.classList.toggle('active', b === btn));
 });
 
+function loadReports(){
+  try{
+    const a = JSON.parse(lsGet(REPORT_KEY));
+    return Array.isArray(a) ? a : [];
+  }catch(e){ return []; }
+}
+
 function submitReport(){
   const kinds = [...document.querySelectorAll('#reportKinds input:checked')].map(c => c.value);
   if(kinds.length === 0){ showToast('内容を1つ以上選択してください。'); return; }
 
-  const body = new URLSearchParams();
-  body.append(FEEDBACK_ENTRY.questionId, reportQid);
-  body.append(FEEDBACK_ENTRY.target, document.querySelector('#reportTarget .active').dataset.v);
-  kinds.forEach(k => body.append(FEEDBACK_ENTRY.kinds, k));
-  body.append(FEEDBACK_ENTRY.note, document.getElementById('reportNote').value.slice(0, 250));
-  body.append(FEEDBACK_ENTRY.device, getOSInfo());
-  body.append(FEEDBACK_ENTRY.version, APP_VERSION);
+  const report = {
+    questionId: reportQid,
+    target: document.querySelector('#reportTarget .active').dataset.v,
+    kinds,
+    note: document.getElementById('reportNote').value.slice(0, 250),
+    device: getOSInfo(),
+    version: APP_VERSION,
+    submittedAt: new Date().toISOString(),
+  };
+
+  let saved = true;
+  try{
+    const all = loadReports().concat(report).slice(-REPORT_MAX);
+    localStorage.setItem(REPORT_KEY, JSON.stringify(all));
+  }catch(e){ saved = false; }
 
   closeReport();
-  if(FEEDBACK_FORM_URL.includes("PLACEHOLDER")){
-    console.info("[report:mock]", body.toString());
-  } else {
-    /* no-corsのためレスポンスは読めない（送信のみ）。失敗は握りつぶす */
-    fetch(FEEDBACK_FORM_URL, { method:"POST", mode:"no-cors", body }).catch(() => {});
-  }
-  showToast('ご報告ありがとうございます。内容を確認します。');
+  showToast(saved ? 'ご報告ありがとうございました。内容を保存しました。' : '報告を保存できませんでした。端末の保存設定をご確認ください。');
 }
 
 /* =========================================================
