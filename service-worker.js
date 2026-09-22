@@ -1,8 +1,8 @@
 /* ゼロナビ Service Worker：完全オフライン用（外部通信なし）
    アプリ構成ファイルを install 時に端末内へ永続キャッシュし、以降はキャッシュのみで応答する。
    index.html 等を更新したら CACHE_NAME の版数を上げること（旧キャッシュは activate で削除）。 */
-const CACHE_NAME = "zeronavi-v1";
-const APP_FILES = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-1024.png"];
+const CACHE_NAME = "zeronavi-v2";
+const APP_FILES = ["./", "index.html", "manifest.json", "icons/zeronavi-icon-192-v2.png", "icons/zeronavi-icon-512-v2.png", "icons/zeronavi-icon-1024-v2.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(APP_FILES)).then(() => self.skipWaiting()));
