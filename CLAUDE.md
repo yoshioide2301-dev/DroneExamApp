@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**DroneQuizApp**(ドローン国家資格 学科対策アプリ)は、無人航空機操縦士(一等・二等)国家資格の学科試験対策を行う単一HTMLファイルのWebアプリです。国土交通省「無人航空機の飛行の安全に関する教則(第5版)」に準拠した全208問を収録しています。
+**DroneQuizApp**(ドローン国家資格 学科対策アプリ)は、無人航空機操縦士(一等・二等)国家資格の学科試験対策を行う単一HTMLファイルのWebアプリです。国土交通省「無人航空機の飛行の安全に関する教則(第5版)」に準拠した全388問を収録しています。
 
 本番公開URL: **https://yoshioide2301-dev.github.io/DroneExamApp/**
 (GitHub Pages / リポジトリ `DroneExamApp` は Public)
@@ -53,7 +53,7 @@ TestApp/
 ```
 
 - **`CHAPTERS`**: 教則の章構成(全5章)。`id` / `title` / `subtitle` / `icon` / `pageRange` を持つ配列。
-- **`QUESTIONS`**: 全208問の設問データ配列。各要素は以下の形式:
+- **`QUESTIONS`**: 全388問の設問データ配列。各要素は以下の形式:
   ```js
   { id:"ch1-01", licenses:["first","second"], chapterID:1, category:"操縦者の心得",
     question:"...", choices:[...], correct:1, explanation:"...", ref:"第1章 1節（P.7）" }
@@ -62,3 +62,10 @@ TestApp/
 - **弱点克服モード用 localStorage キー**: `droneQuizWrongQuestionIds`(定数名 `WRONG_IDS_KEY`)
   - 誤答した設問の `id` を JSON 配列として保存する。次回起動時にこのキーを読み込み、弱点だけを抽出した復習セッションを構成する。
   - localStorage が使用できない環境(プライベートブラウズ等)では例外を握りつぶし、記憶をスキップする設計(`try/catch`)になっているため、この挙動を壊さないこと。
+
+
+## 2026-09-27 AI戦略司令室追記
+- GitHub mainの実装問題数は388問（旧来78問＋一等160問＋二等150問）。
+- 一等の連番1-C001～1-C100は欠番を解消し、1-C081～1-C100を追加した。
+- App Store公開準備・競合調査・ASO方針は docs/ai-strategy-room/ に記録する。
+- MacBook Proのローカル環境は正本ではなく、過去のXcode作業残骸が存在する可能性を前提に扱う。
