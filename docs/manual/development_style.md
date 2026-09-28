@@ -23,5 +23,9 @@ Claude Code はセッション開始時にこの内容を前提として作業�
 
 - **DO NOT hardcode or read any personal data, user credentials, or client information.**
   （個人情報や機密データをコード内に直接記述・読込しないこと）
+- **Never output or record secrets (API keys, tokens, passwords, private keys, credentials, `.env`, Apple signing materials) in chat, docs, code, logs, or commits.**
+  （秘密情報の本文をチャット・ドキュメント・コード・ログ・commitへ出力/記録しないこと）
+- **Stage only reviewed files explicitly (`git add <file>`); do not use `git add .` / `git add -A`.**
+  （`git status --short` / `git diff` で変更対象を確認し、必要なファイルだけ明示的に stage すること）
 - **Keep code changes minimal and concise to maintain cost efficiency.**
   （コストとトークン節約のため、コード変更は常に最小限かつ簡潔に行い、不要な外部ライブラリを勝手に追加しないこと）

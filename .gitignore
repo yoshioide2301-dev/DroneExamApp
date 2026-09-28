@@ -1,3 +1,16 @@
 node_modules/
 www/
 .DS_Store
+
+# Secrets (誤commit防止)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.p8
+*.mobileprovision
+
+# ローカル限定の未追跡ファイル
+/ios.zip

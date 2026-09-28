@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 特に以下は毎セッション厳守:
 - **個人情報・認証情報・クライアント情報をコードにハードコード/読込しない**
+- **API key / token / password / 秘密鍵 / credential / `.env` / Apple署名情報(証明書・プロビジョニングプロファイル等)の本文を、チャット・ドキュメント・コード・ログ・commit に出力/記録しない**
 - **コスト・トークン節約のため、コード変更は常に最小限かつ簡潔に。不要な外部ライブラリを勝手に追加しない**
 
 ## Project Overview
@@ -25,8 +26,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `server.js` は依存パッケージ不要の素朴な静的ファイルサーバー(`http`/`fs`のみ使用)。`npm install` は不要。
 - ビルドステップは存在しない。`index.html` を直接編集し、保存すればそのまま動作に反映される。
 - デプロイ: `main` ブランチに push すると GitHub Pages が自動再ビルド・再公開する(手動デプロイ操作は不要)。
+  変更対象を確認し、必要なファイルだけ明示的に stage する(`git add .` / `git add -A` は使わない):
   ```
-  git add .
+  git status --short
+  git diff -- <対象ファイル>
+  git add <対象ファイル>
   git commit -m "..."
   git push
   ```
