@@ -1,0 +1,66 @@
+# iOS 署名なしビルド検査（手動実行専用）
+# - 署名鍵 / Apple APIキー / GitHub Secrets は使用しない
+# - App Store Connect への自動アップロード・自動公開は行わない
+# - このファイルは main へ push するまでクラウド(GitHub Actions)で実行できない
+name: iOS unsigned build check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify default Xcode is 26 or later
+        run: |
+          xcode-select -p
+          xcodebuild -version
+          echo "iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
+          MAJOR=$(xcodebuild -version | awk 'NR==1{split($2,v,"."); print v[1]}')
+          case "$MAJOR" in ''|*[!0-9]*) echo "Could not parse Xcode version"; exit 1;; esac
+          [ "$MAJOR" -ge 26 ] || { echo "Xcode $MAJOR < 26 (requires 26+)"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Capacitor sync (www -> ios)
+        run: npm run cap:sync
+
+      - name: Show tracked-file changes produced by sync
+        run: |
+          git status --short
+          git diff --stat
+
+      - name: List Xcode project schemes
+        run: xcodebuild -list -project ios/App/App.xcodeproj
+
+      - name: Build iOS app without code signing
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
