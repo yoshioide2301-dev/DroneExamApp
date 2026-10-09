@@ -12,6 +12,7 @@
 | セカンダリカテゴリ | 参考資料 | |
 | 価格 | 無料（App内課金なし） | |
 | 著作権 | 2026 Yoshio Ide（アプリ内表示と一致） | |
+| 販売者名 | Yoshio Ide（Developer は個人で登録。2026-10-09 確認） | |
 | バンドルID | com.zerogravityfilms.zeronavi | |
 | バージョン | 1.1.0（ビルド 1） | |
 
@@ -72,6 +73,6 @@ any government agency or the designated examination body.
 1. Apple Developer Program：2026-10-03 申請済み、審査の回答待ち。承認後に App Store Connect でアプリを登録する。
 2. プライバシーポリシー／サポートページの公開URL。運営者名は「Yoshio Ide（Zero Gravity Films）」で反映済み。連絡先は未定（専用アドレスを作るかどうか）。docs/appstore/ の下書きを使う。
 3. ~~iPad 対応~~ → 2026-10-09 決定：iPhone＋iPad 両対応（`TARGETED_DEVICE_FAMILY = "1,2"` のまま）。iPad 13インチのスクリーンショットが必須。iPad の画面崩れ確認が必要。
-4. 署名・アップロード方式（Codemagic または GitHub Actions＋App Store Connect APIキー）。
+4. ~~署名方式~~ → 2026-10-09 決定：GitHub Actions。手順は testflight-setup.md。
 5. スクリーンショット（iPhone 6.9インチ必須）の作成。
-6. ブランチ `appstore-prep-1.1.0` を main へ反映（＝GitHub Pages の公開版も更新される）。
+6. main への反映：2026-10-09 決定（B案）。ブランチで TestFlight の確認まで進め、App Store 公開と同じタイミングで main に入れる（教材反映の承認が必要）。

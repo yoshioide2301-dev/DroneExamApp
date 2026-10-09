@@ -1,0 +1,112 @@
+# iOS 署名付きビルド → App Store Connect（TestFlight）へアップロード
+# - 起動：Actions画面から手動実行（main にこのファイルがある場合）または タグ ios-v* の push
+# - 署名：App Store Connect APIキーによる自動署名（証明書・プロファイルはAppleのクラウド管理）
+# - 必要な GitHub Secrets：ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8（.p8の本文） / APPLE_TEAM_ID
+# - App Review への提出・公開は行わない（TestFlight に届くところまで）
+name: iOS TestFlight upload
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "ios-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - name: Check required secrets
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+            [ -n "${!v}" ] || { echo "Secret $v is not set"; exit 1; }
+          done
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify default Xcode is 26 or later
+        run: |
+          xcodebuild -version
+          MAJOR=$(xcodebuild -version | awk 'NR==1{split($2,v,"."); print v[1]}')
+          case "$MAJOR" in ''|*[!0-9]*) echo "Could not parse Xcode version"; exit 1;; esac
+          [ "$MAJOR" -ge 26 ] || { echo "Xcode $MAJOR < 26 (requires 26+)"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Capacitor sync (www -> ios)
+        run: npm run cap:sync
+
+      - name: Write API key and export options
+        run: |
+          umask 077
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Archive (signed)
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -derivedDataPath build/DerivedData \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            archive
+
+      - name: Export and upload to App Store Connect
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          echo "Uploaded build number $BUILD_NUMBER"
+
+      - name: Remove API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
