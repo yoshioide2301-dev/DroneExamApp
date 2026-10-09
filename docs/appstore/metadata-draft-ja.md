@@ -69,9 +69,9 @@ any government agency or the designated examination body.
 ```
 
 ## 本人の判断・操作が必要なもの（未決）
-1. Apple Developer Program 登録（年会費・課金）と App Store Connect のアプリ登録。
-2. プライバシーポリシー／サポートページの公開URL（連絡先・運営者名を決めて公開）。docs/appstore/ の下書きを使う。
-3. iPad 対応：現在 `TARGETED_DEVICE_FAMILY = "1,2"`。両方対応なら iPad 13インチのスクリーンショットも必須。iPhone のみなら設定を "1" に変更。
+1. Apple Developer Program：2026-10-03 申請済み、審査の回答待ち。承認後に App Store Connect でアプリを登録する。
+2. プライバシーポリシー／サポートページの公開URL。運営者名は「Yoshio Ide（Zero Gravity Films）」で反映済み。連絡先は未定（専用アドレスを作るかどうか）。docs/appstore/ の下書きを使う。
+3. ~~iPad 対応~~ → 2026-10-09 決定：iPhone＋iPad 両対応（`TARGETED_DEVICE_FAMILY = "1,2"` のまま）。iPad 13インチのスクリーンショットが必須。iPad の画面崩れ確認が必要。
 4. 署名・アップロード方式（Codemagic または GitHub Actions＋App Store Connect APIキー）。
 5. スクリーンショット（iPhone 6.9インチ必須）の作成。
 6. ブランチ `appstore-prep-1.1.0` を main へ反映（＝GitHub Pages の公開版も更新される）。
