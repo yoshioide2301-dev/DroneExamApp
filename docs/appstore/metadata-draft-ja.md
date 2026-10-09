@@ -70,7 +70,7 @@ any government agency or the designated examination body.
 ```
 
 ## 本人の判断・操作が必要なもの（未決）
-1. Apple Developer Program：2026-10-03 申請済み、審査の回答待ち。承認後に App Store Connect でアプリを登録する。
+1. Apple Developer Program：**2026-10-03 承認済み**（個人。年額 ¥12,800、2027-10-02 に自動更新）。次は testflight-setup.md の手順1〜4。
 2. プライバシーポリシー／サポートページの公開URL。運営者名は「Yoshio Ide（Zero Gravity Films）」で反映済み。連絡先は未定（専用アドレスを作るかどうか）。docs/appstore/ の下書きを使う。
 3. ~~iPad 対応~~ → 2026-10-09 決定：iPhone＋iPad 両対応（`TARGETED_DEVICE_FAMILY = "1,2"` のまま）。iPad 13インチのスクリーンショットが必須。iPad の画面崩れ確認が必要。
 4. ~~署名方式~~ → 2026-10-09 決定：GitHub Actions。手順は testflight-setup.md。
