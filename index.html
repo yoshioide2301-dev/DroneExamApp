@@ -858,7 +858,12 @@
   :root[data-theme="light"] .status-icons svg{ filter:invert(1); }
 
   /* ---------- header tools / settings menu ---------- */
-  .menu-tools{ display:flex; justify-content:flex-end; gap:8px; margin:2px 0 10px; }
+  .menu-brand-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 14px; }
+  .menu-brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .menu-brand img{ width:48px; height:48px; border-radius:12px; flex:none; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  .menu-brand b{ display:block; font-size:calc(19px * var(--fs)); font-weight:800; letter-spacing:.04em; color:var(--fg); }
+  .menu-brand small{ display:block; font-size:calc(11px * var(--fs)); color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .menu-tools{ display:flex; justify-content:flex-end; gap:8px; margin:0; flex:none; }
   .tool-btn{
     height:36px; min-width:36px; padding:0 11px; border-radius:99px;
     border:1px solid var(--card-border); background:var(--card-bg); color:var(--fg);
@@ -960,10 +965,16 @@
         <!-- ============ MENU SCREEN ============ -->
         <section class="screen active" id="menuScreen">
           <div class="menu-header">
-            <div class="menu-tools">
-              <button class="tool-btn" id="btnFont" onclick="cycleFontSize()" aria-label="文字サイズを変更">A<small id="fontTag">標準</small></button>
-              <button class="tool-btn" id="btnTheme" onclick="cycleTheme()" aria-label="背景テーマを変更">🌙</button>
-              <button class="tool-btn" onclick="openSettings()" aria-label="設定">⚙️</button>
+            <div class="menu-brand-row">
+              <div class="menu-brand">
+                <img src="icons/zeronavi-icon-192-v2.png" alt="" width="48" height="48">
+                <div><b>ゼロナビ</b><small>ドローン国家資格 学科試験対策</small></div>
+              </div>
+              <div class="menu-tools">
+                <button class="tool-btn" id="btnFont" onclick="cycleFontSize()" aria-label="文字サイズを変更">A<small id="fontTag">標準</small></button>
+                <button class="tool-btn" id="btnTheme" onclick="cycleTheme()" aria-label="背景テーマを変更">🌙</button>
+                <button class="tool-btn" onclick="openSettings()" aria-label="設定">⚙️</button>
+              </div>
             </div>
             <h1>無人航空機操縦士教則第5版（2026年7月14日適用）</h1>
             <p id="menuSubtitle">二等資格の出題範囲を、教則の章ごとに演習できます。</p>
