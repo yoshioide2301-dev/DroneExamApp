@@ -14,6 +14,8 @@
 | 著作権 | 2026 Yoshio Ide（アプリ内表示と一致） | |
 | 販売者名 | Yoshio Ide（Developer は個人で登録。2026-10-09 確認） | |
 | バンドルID | com.zerogravityfilms.zeronavi | |
+| プライバシーポリシーURL | https://yoshioide2301-dev.github.io/DroneExamApp/docs/appstore/privacy.html（2026-10-10 公開） | |
+| サポートURL | https://yoshioide2301-dev.github.io/DroneExamApp/docs/appstore/support.html（2026-10-10 公開） | |
 | バージョン | 1.1.0（ビルド 1） | |
 
 ## キーワード（100文字以内、アプリ名・サブタイトルの語は重複させない）
