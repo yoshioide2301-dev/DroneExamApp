@@ -1015,10 +1015,6 @@
             <div class="mat-head" id="matHead"></div>
             <div class="acc-list" id="accList"></div>
             <div class="mat-cta" id="matCta"></div>
-            <div class="mat-debug">
-              <button onclick="forceRevision('6.0')">【テスト用】自律リサーチ（教則第6版）検知を擬似発火</button>
-              <button onclick="resetKisokuVersion()">【開発者用デバッグ】第5版の状態に戻す</button>
-            </div>
           </div>
 
           <div class="pane" id="cbtPane">
@@ -8540,7 +8536,7 @@ function resetKisokuVersion(){
 /* =========================================================
    本番疑似CBT・模擬試験モード
    LocalStorage: cbt_exam_history = [{date:"YYYY-MM-DD", total:回答総数, correct:正解数}, ...]
-   （キー未作成時のみ、右肩上がりの初期ダミー3件を自動注入）
+   （初回は空。旧版が自動注入した初期ダミー3件は、完全一致のときだけ1回取り除く）
    ========================================================= */
 const CBT_HISTORY_KEY = "cbt_exam_history";
 const CBT_WEAK_RATIO = 0.3;
@@ -8568,17 +8564,18 @@ function saveCbtHistory(h){
 function loadCbtHistory(){
   try{
     const raw = localStorage.getItem(CBT_HISTORY_KEY);
-    if(raw === null){
-      const h = dummyCbtHistory();
-      saveCbtHistory(h);
-      return h;
+    if(raw === null) return [];
+    let arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) return [];
+    // 旧版のダミー3件（35/22・45/36・50/41。本番は50問・ミニは10問なので35・45問は実績になり得ない）を先頭で完全一致したときだけ除去
+    const d = dummyCbtHistory();
+    if(arr.length >= 3 && d.every((x,i) => arr[i] && arr[i].total === x.total && arr[i].correct === x.correct)){
+      arr = arr.slice(3);
+      saveCbtHistory(arr);
     }
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr)
-      ? arr.filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && Number.isFinite(r.total) && Number.isFinite(r.correct))
-      : [];
+    return arr.filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && Number.isFinite(r.total) && Number.isFinite(r.correct));
   }catch(e){
-    return dummyCbtHistory();
+    return [];
   }
 }
 
