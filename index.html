@@ -1244,10 +1244,10 @@
         <div class="sheet-label">補足（任意・250文字以内）</div>
         <textarea id="reportNote" maxlength="250" oninput="document.getElementById('reportCount').textContent=this.value.length"></textarea>
         <div class="sheet-count"><span id="reportCount">0</span> / 250</div>
-        <p class="sheet-note">アプリのバージョン・端末情報（OS情報）・日時が、この端末内にのみ保存されます。外部へは送信されません。</p>
+        <p class="sheet-note">「メールで送る」を押すと、内容を書き込んだメールが開きます。送信すると、内容とあなたのメールアドレス、アプリのバージョン・OSの種類が開発者に届きます。送らずに閉じることもできます。</p>
         <div class="sheet-actions">
           <button class="secondary-btn" onclick="closeReport()">キャンセル</button>
-          <button class="primary-btn" onclick="submitReport()">保存する</button>
+          <button class="primary-btn" onclick="submitReport()">メールで送る</button>
         </div>
       </div>
     </div>
@@ -8255,6 +8255,7 @@ function startDailyMode(){
 const APP_VERSION = "1.1.0";
 const REPORT_KEY = "zeronavi_bug_reports";
 const REPORT_MAX = 200;
+const REPORT_MAIL = "zg.dev2301@gmail.com";
 let reportQid = "";
 
 function getOSInfo(){
@@ -8317,7 +8318,20 @@ function submitReport(){
   }catch(e){ saved = false; }
 
   closeReport();
-  showToast(saved ? 'この端末内に保存しました（開発者へは送信されていません）。' : '報告を保存できませんでした。端末の保存設定をご確認ください。');
+  // 報告はメールで送る（サーバーなし）。端末内の記録は控えとして残す
+  const body = [
+    '問題ID：' + report.questionId,
+    'どこの誤り：' + report.target,
+    '内容：' + report.kinds.join('、'),
+    '補足：' + (report.note || '（なし）'),
+    '',
+    'アプリ：ゼロナビ ' + report.version,
+    'OS：' + report.device,
+    '日時：' + new Date(report.submittedAt).toLocaleString('ja-JP'),
+  ].join('\n');
+  const subject = '【ゼロナビ】気になる点の報告 ' + report.questionId;
+  window.location.href = 'mailto:' + REPORT_MAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  showToast(saved ? 'メールを開きました。送信すると開発者に届きます。' : 'メールを開きました（端末内の控えは保存できませんでした）。');
 }
 
 /* =========================================================
