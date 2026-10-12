@@ -76,6 +76,10 @@ jobs:
           </plist>
           EOF
 
+      # 証明書の上限対策（本人承認 10/12）：ビルド前の一覧を残し、最後にこの回に作った開発用の証明書だけを取り消す
+      - name: 署名用の証明書の一覧（ビルド前）
+        run: node .github/scripts/asc-certs.mjs list | tee "$RUNNER_TEMP/certs-before.txt"
+
       - name: Archive (signed)
         run: |
           xcodebuild \
@@ -106,6 +110,13 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
           echo "Uploaded build number $BUILD_NUMBER"
+
+      # 安全確認：ビルド前に無かった・開発用だけ・作られたばかり・2枚まで（asc-certs.mjs）。配布用やリリース中のアプリには触れない
+      - name: この回に作った開発用の証明書を取り消す
+        if: always()
+        run: |
+          [ -f "$RUNNER_TEMP/certs-before.txt" ] || { echo "ビルド前の一覧が無いので取り消さない"; exit 0; }
+          node .github/scripts/asc-certs.mjs revoke-new "$RUNNER_TEMP/certs-before.txt" || echo "取り消しに失敗（ビルドの結果には影響しない）"
 
       - name: Remove API key
         if: always()
